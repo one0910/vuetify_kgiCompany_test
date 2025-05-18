@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
 
 export const useInsureanceStore = defineStore('insureance', () => {
-  const insureanceData = ref([
+  const policyholderSignature = ref([
     {
       type: 'sign',
       insueranceId: Math.floor(Math.random() * 10000),
@@ -148,7 +148,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     }
   ]);
 
-  const insureanceSaleReadDoc = ref([
+  const salesDocPreview = ref([
     {
       type: 'read',
       salseDocId: Math.floor(Math.random() * 10000),
@@ -175,12 +175,95 @@ export const useInsureanceStore = defineStore('insureance', () => {
     },
   ])
 
+  const salesDocSignature = ref([
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書1',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人簽名',
+          cordinate: { x: 522, y: 266 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '被保險人簽名',
+          cordinate: { x: 522, y: 346 },
+          isSinged: true
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '法定代理人簽名',
+          cordinate: { x: 655, y: 443 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '關係',
+          cordinate: { x: 1064, y: 449 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '被保險人配偶簽名',
+          cordinate: { x: 522, y: 224 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '被保險人子女簽名',
+          cordinate: { x: 522, y: 274 },
+          isSinged: false
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm1.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書2',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: true
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書3',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+  ])
+
+
+
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
   const nextButton = computed(() =>
-    insureanceSaleReadDoc.value.every(doc => doc.readComplete === true)
+    salesDocPreview.value.every(doc => doc.readComplete === true)
   );
 
   function setScrollContainer(el) {
@@ -188,7 +271,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   async function renderInsureanceDoc(page) {
-    const currentDoc = insureanceSaleReadDoc.value[page];
+    const currentDoc = salesDocPreview.value[page];
     if (!currentDoc || !currentDoc.tiffUrl) {
       renderedCanvas.value = null;
       return null;
@@ -209,7 +292,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
       canvas.width = width;
       canvas.height = height;
-      // insureanceSaleReadDoc.value[page].pageHeight = height
+      // salesDocPreview.value[page].pageHeight = height
 
       for (let i = 0; i < width * height; i++) {
         const r16 = raster[i * 4];
@@ -244,7 +327,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   async function switchPage({ index = currentPage.value, type = '' }) {
     isLoading.value = false
     if (type === 'last' && currentPage.value === 0) return;
-    if (type === 'next' && currentPage.value === insureanceSaleReadDoc.value.length - 1) return;
+    if (type === 'next' && currentPage.value === salesDocPreview.value.length - 1) return;
 
     // if (type === 'next') {
     //   currentPage.value++;
@@ -255,7 +338,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     currentPage.value = index;
     scrollToPage(currentPage.value);
     //需已閱讀才能跳頁
-    // if (insureanceSaleReadDoc.value[currentPage.value].readComplete) {
+    // if (salesDocPreview.value[currentPage.value].readComplete) {
     //   currentPage.value = index;
     //   scrollToPage(currentPage.value);
     // }
@@ -269,7 +352,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     let targetTop = 0;
 
     for (let i = 0; i < pageIndex; i++) {
-      const height = insureanceSaleReadDoc.value[i]?.pageHeight || 0;
+      const height = salesDocPreview.value[i]?.pageHeight || 0;
       targetTop += height;
     }
 
@@ -283,11 +366,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   return {
-    insureanceData,
+    policyholderSignature,
+    salesDocPreview,
+    salesDocSignature,
     currentPage,
     switchPage,
     renderInsureanceDoc,
-    insureanceSaleReadDoc,
     renderedCanvas,
     isLoading,
     scrollContainerRef,

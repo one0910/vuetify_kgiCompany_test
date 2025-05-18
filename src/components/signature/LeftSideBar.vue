@@ -4,14 +4,14 @@ import { useInsureanceStore } from '@/stores/signature';
 
 const store = useInsureanceStore();
 
-const insureanceData = computed(() => store.insureanceData);
+const policyholderSignature = computed(() => store.policyholderSignature);
 const currentPage = computed(() => store.currentPage);
 </script>
 
 <template>
   <v-sheet height="350" class="bgPrimaryColor">
     <v-list class="bgPrimaryColor">
-      <v-list-item v-for="(item, index) in insureanceData" :key="index" tag="div">
+      <v-list-item v-for="(item, index) in policyholderSignature" :key="index" tag="div">
         <template v-slot>
           <div
             class="d-flex justify-center align-center cursor-pointer"

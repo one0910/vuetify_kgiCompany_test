@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import tiffUrl from '/file_example_TIFF_1MB.tiff?url';
 
-const insureanceData = ref([
+const policyholderSignature = ref([
   {
     insueranceId: Math.floor(Math.random() * 10000),
     title: '文件名稱',
@@ -81,13 +81,11 @@ const insureanceData = ref([
     <v-row>
       <v-col cols="1">
         <v-list
-          v-for="(item, index) in insureanceData"
+          v-for="(item, index) in policyholderSignature"
           :key="index"
           class="bg-customBgColor"
         >
-          <v-list-item-content
-            class="d-flex justify-center align-center"
-          >
+          <v-list-item-content class="d-flex justify-center align-center">
             <v-avatar
               color="transparent"
               size="24"
@@ -104,18 +102,13 @@ const insureanceData = ref([
                 size="12"
               ></v-icon>
             </v-avatar>
-            <v-list-item-subtitle
-              class="pl-3 text-subtitle-1 text-primary"
-            >
+            <v-list-item-subtitle class="pl-3 text-subtitle-1 text-primary">
               {{ index + 1 }}
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list>
 
-        <v-sheet
-          class="d-flex flex-column mt-3 align-center bg-customBgColor"
-          height="110"
-        >
+        <v-sheet class="d-flex flex-column mt-3 align-center bg-customBgColor" height="110">
           <v-avatar color="white" size="45" class="mb-auto border-md">
             <v-icon icon="mdi-arrow-up"></v-icon>
           </v-avatar>

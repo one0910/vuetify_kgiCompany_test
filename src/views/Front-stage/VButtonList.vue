@@ -9,7 +9,8 @@ const store = useInsureanceStore();
 const scrollContainerRef = ref(null);
 const maxHeight = ref(450);
 const { isTablet } = useMediaCheck();
-const DataLenght = store.insureanceSaleReadDoc.length;
+const DataLenght = store.salesDocPreview.length;
+
 console.log(`isTablet => `, isTablet.value);
 
 function detectBottom(event) {
@@ -21,7 +22,7 @@ function detectBottom(event) {
 
   if (scrollHeight <= clientHeight + 1) return;
 
-  store.insureanceSaleReadDoc.forEach((doc, index) => {
+  store.salesDocPreview.forEach((doc, index) => {
     const pageHeight = doc.pageHeight || 0;
     const pageTop = cumulativeHeight;
     let pageBottom = cumulativeHeight + pageHeight;

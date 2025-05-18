@@ -3,7 +3,7 @@ import { ref, watch } from 'vue';
 import { fromUrl, fromArrayBuffer } from 'geotiff'
 
 export const useInsureanceStore = defineStore('insureance', () => {
-  const insureanceData = ref([
+  const policyholderSignature = ref([
     {
       type: 'sign',
       insueranceId: Math.floor(Math.random() * 10000),
@@ -148,7 +148,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     }
   ]);
 
-  const insureanceSaleReadDoc = ref([
+  const salesDocPreview = ref([
     {
       type: 'read',
       salseDocId: Math.floor(Math.random() * 10000),
@@ -182,7 +182,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   async function renderInsureanceDoc(page) {
-    const currentDoc = insureanceSaleReadDoc.value[page];
+    const currentDoc = salesDocPreview.value[page];
     if (!currentDoc || !currentDoc.tiffUrl) {
       renderedCanvas.value = null;
       return null;
@@ -239,7 +239,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   async function switchPage({ index = currentPage.value, type = '' }) {
     isLoading.value = false
     if (type === 'last' && currentPage.value === 0) return;
-    if (type === 'next' && currentPage.value === insureanceSaleReadDoc.value.length - 1) return;
+    if (type === 'next' && currentPage.value === salesDocPreview.value.length - 1) return;
 
     if (type === 'next') {
       currentPage.value++;
@@ -258,11 +258,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
   });
 
   return {
-    insureanceData,
+    policyholderSignature,
     currentPage,
     switchPage,
     renderInsureanceDoc,
-    insureanceSaleReadDoc,
+    salesDocPreview,
     renderedCanvas,
     isLoading,
     scrollContainerRef,

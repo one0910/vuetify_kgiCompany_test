@@ -8,12 +8,12 @@ const canvasRef = ref(null);
 // 首次掛載時也更新一次畫布
 onMounted(async () => {
   canvasRef.value.innerHTML = '';
-  for (let i = 0; i < store.insureanceSaleReadDoc.length; i++) {
+  for (let i = 0; i < store.salesDocPreview.length; i++) {
     const canvas = await store.renderInsureanceDoc(i);
     if (canvas) {
       canvasRef.value.appendChild(canvas);
       const domHeight = canvas.offsetHeight;
-      store.insureanceSaleReadDoc[i].pageHeight = domHeight;
+      store.salesDocPreview[i].pageHeight = domHeight;
       console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
     }
   }

@@ -5,7 +5,7 @@ const store = useInsureanceStore();
 <template>
   <v-sheet class="d-flex py-1" style="background-color: rgba(0, 0, 0, 0.61)">
     <v-list
-      v-for="(item, index) in store.insureanceData"
+      v-for="(item, index) in store.policyholderSignature"
       :key="index"
       style="background-color: #00000000"
       class="px-2"

@@ -46,9 +46,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: false
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm1.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm7.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      allSignatureComplete: true
     },
     {
       type: 'sign',
@@ -62,7 +62,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: true
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm6.tiff?url',
       isSignaturing: true,
       allSignatureComplete: true
     },
@@ -78,9 +78,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: true
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      allSignatureComplete: true
     },
     {
       type: 'sign',
@@ -96,56 +96,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
       ],
       tiffUrl: '/ag_ieasy_confirm4.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      allSignatureComplete: true
     },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書5',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書5',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm6.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書5',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm7.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    }
+
   ]);
 
   const salesDocPreview = ref([
@@ -218,9 +171,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: false
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm1.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      allSignatureComplete: true
     },
     {
       type: 'sign',
@@ -234,7 +187,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: true
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
       isSignaturing: true,
       allSignatureComplete: true
     },
@@ -250,36 +203,63 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: true
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      allSignatureComplete: true
     },
   ])
 
+  type Stage = 'policyholderSignature' | 'salesDocPreview' | 'salesDocSignature';
+  const stage = ref<Stage>('policyholderSignature');
 
+  const currentDocs = computed(() => {
+    if (stage.value === 'policyholderSignature') return policyholderSignature.value;
+    if (stage.value === 'salesDocPreview') return salesDocPreview.value;
+    if (stage.value === 'salesDocSignature') return salesDocSignature.value;
+    return [];
+  });
+
+  const eableNextButton = computed(() => {
+    if (stage.value === 'policyholderSignature') {
+      return policyholderSignature.value.every(doc => doc.allSignatureComplete);
+    }
+    if (stage.value === 'salesDocPreview') {
+      return salesDocPreview.value.every(doc => doc.readComplete);
+    }
+    if (stage.value === 'salesDocSignature') {
+      return salesDocSignature.value.every(doc => doc.allSignatureComplete);
+    }
+    return false;
+  });
 
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
-  const nextButton = computed(() =>
-    salesDocPreview.value.every(doc => doc.readComplete === true)
-  );
+
 
   function setScrollContainer(el) {
     scrollContainerRef.value = el;
   }
 
-  async function renderInsureanceDoc(page) {
-    const currentDoc = salesDocPreview.value[page];
-    if (!currentDoc || !currentDoc.tiffUrl) {
-      renderedCanvas.value = null;
-      return null;
+  function goToNextStage() {
+    if (stage.value === 'policyholderSignature') {
+      stage.value = 'salesDocPreview';
+    } else if (stage.value === 'salesDocPreview') {
+      stage.value = 'salesDocSignature';
+    } else {
+      console.log('流程已完成 ✅');
     }
+    currentPage.value = 0;
+  }
+
+
+  async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
+    const tiffUrl = doc.tiffUrl;
 
     try {
       isLoading.value = true
-      const response = await fetch(currentDoc.tiffUrl)
+      const response = await fetch(tiffUrl)
       const arrayBuffer = await response.arrayBuffer()
       const tiff = await fromArrayBuffer(arrayBuffer)
       const image = await tiff.getImage();
@@ -295,10 +275,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
       // salesDocPreview.value[page].pageHeight = height
 
       for (let i = 0; i < width * height; i++) {
-        const r16 = raster[i * 4];
-        const g16 = raster[i * 4 + 1];
-        const b16 = raster[i * 4 + 2];
-        const a16 = raster[i * 4 + 3];
+        const r16 = raster[i * 4] as any;
+        const g16 = raster[i * 4 + 1] as any;
+        const b16 = raster[i * 4 + 2] as any;
+        const a16 = raster[i * 4 + 3] as any;
 
         const r = (r16 * 255) / 65535;
         const g = (g16 * 255) / 65535;
@@ -352,7 +332,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
     let targetTop = 0;
 
     for (let i = 0; i < pageIndex; i++) {
-      const height = salesDocPreview.value[i]?.pageHeight || 0;
+      const doc = currentDocs.value[i];
+      const height = (stage.value === 'salesDocPreview' && 'pageHeight' in doc) ? doc.pageHeight : 0;
       targetTop += height;
     }
 
@@ -366,6 +347,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   return {
+    stage,
     policyholderSignature,
     salesDocPreview,
     salesDocSignature,
@@ -377,6 +359,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
     scrollContainerRef,
     setScrollContainer,
     scrollToPage,
-    nextButton
+    eableNextButton,
+    goToNextStage,
+    currentDocs
   };
 });

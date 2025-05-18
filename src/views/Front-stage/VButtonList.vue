@@ -1,20 +1,17 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, nextTick } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 import SwitchSideBarRead from '@/components/signature/SwitchSideBar-Read.vue';
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
-import { useMediaCheck } from '@/composable/useMediaCheck';
 
 const store = useInsureanceStore();
 const scrollContainerRef = ref(null);
+const canvasViewerRef = ref();
 const maxHeight = ref(450);
-const { isTablet } = useMediaCheck();
-const DataLenght = store.salesDocPreview.length;
-
-console.log(`isTablet => `, isTablet.value);
 
 function detectBottom(event) {
   if (!(event.target instanceof HTMLElement)) return;
+  if (store.stage !== 'salesDocPreview') return;
   const { scrollTop, scrollHeight, clientHeight } = event.target;
   const scrollPosition = scrollTop + clientHeight;
 
@@ -51,9 +48,10 @@ function detectBottom(event) {
 }
 
 function nextStep() {
-  const el = scrollContainerRef.value?.$el;
-  el.removeEventListener('scroll', detectBottom);
-  alert('下一步');
+  store.goToNextStage();
+  nextTick(() => {
+    canvasViewerRef.value?.renderAllCanvas();
+  });
 }
 
 onMounted(() => {
@@ -111,7 +109,7 @@ watch(
               <!-- <SignaturedNavbar /> -->
             </v-sheet>
             <div>
-              <CanvasViewer />
+              <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />
             </div>
           </v-sheet>
         </v-sheet>
@@ -133,7 +131,7 @@ watch(
             size="x-large"
             width="250"
             class="bg-blue-darken-4"
-            :disabled="!store.nextButton"
+            :disabled="!store.eableNextButton"
             @click="nextStep"
             >下一步
           </v-btn>

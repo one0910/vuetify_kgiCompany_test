@@ -1,22 +1,46 @@
 <script setup>
-import { onMounted, ref, watch, nextTick } from 'vue';
+import { onMounted, ref, defineProps, nextTick, defineExpose } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
+const { documents } = defineProps(['documents']);
 
 const store = useInsureanceStore();
 const canvasRef = ref(null);
+const isLoading = ref(false);
 
 // 首次掛載時也更新一次畫布
-onMounted(async () => {
+async function renderAllCanvas() {
+  if (!canvasRef.value) return;
+
+  isLoading.value = true;
   canvasRef.value.innerHTML = '';
-  for (let i = 0; i < store.salesDocPreview.length; i++) {
-    const canvas = await store.renderInsureanceDoc(i);
+  for (let i = 0; i < documents.length; i++) {
+    const canvas = await store.renderInsureanceDoc(documents[i]);
     if (canvas) {
       canvasRef.value.appendChild(canvas);
+      await nextTick();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      console.log(`canvasRef.value.innerHTML => `, canvasRef.value.innerHTML);
       const domHeight = canvas.offsetHeight;
-      store.salesDocPreview[i].pageHeight = domHeight;
+      documents[i].pageHeight = domHeight;
       console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
     }
   }
+  isLoading.value = false;
+}
+
+onMounted(async () => {
+  await renderAllCanvas();
+});
+
+// watch(
+//   () => store.stage,
+//   async () => {
+//     await nextTick(); // 確保 DOM 已更新
+//     await renderAllCanvas();
+//   }
+// );
+defineExpose({
+  renderAllCanvas
 });
 </script>
 
@@ -26,11 +50,11 @@ onMounted(async () => {
       color="grey-darken-1"
       indeterminate
       size="40"
-      v-show="store.isLoading"
+      v-show="isLoading"
     ></v-progress-circular>
   </v-sheet>
 
-  <div ref="canvasRef" v-show="!store.isLoading" class="canvas-container border-xl"></div>
+  <div ref="canvasRef" v-show="!store.isLoading" class="canvas-container border-xl,"></div>
 </template>
 
 <style lang="scss" scoped>

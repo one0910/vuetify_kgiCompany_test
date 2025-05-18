@@ -1,0 +1,384 @@
+我們把問題再弄單純點, 我現在把detectBottom放回到VButtonList裡, 這樣我比較好除錯
+我現在的問題仍然是當我在一開始就執行scroll的event listener時,當我做換頁切換switchPage時,
+它就會自動的去執行我src\views\Front-stage\VButtonList.vue裡的detectBottom(), 有什麼方式可以避免這點題?
+比如說我在beforeonMount時, 可以先把scroll event listen移除掉, 或是當我if (scrollTop + clientHeight >= scrollHeight - 2) {}條件達到時就把scroll event listen移除掉
+你認為呢? 或是有更好的方法?
+
+src\views\Front-stage\VButtonList.vue
+<script setup>
+import { onMounted, ref } from 'vue';
+import { useInsureanceStore } from '@/stores/signature';
+import SwitchSideBarRead from '@/components/signature/SwitchSideBar-Read.vue';
+import CanvasViewer from '@/components/signature/CanvasViewer.vue';
+const store = useInsureanceStore();
+const scrollContainerRef = ref(null);
+
+// onMounted(() => {
+//   store.setScrollContainer(scrollContainerRef.value);
+// });
+
+function detectBottom(event) {
+  if (!(event.target instanceof HTMLElement)) return;
+  const { scrollTop, scrollHeight, clientHeight } = event.target;
+  if (scrollTop + clientHeight >= scrollHeight - 2) {
+    store.buttonEnabled = true;
+    console.log(`store.currentPage => `, store.currentPage);
+  }
+}
+</script>
+
+<template>
+  <v-container fluid="">
+    <!-- 名稱列 & 頁數 -->
+    <v-row>
+      <v-col cols="1" class="pa-0 text-center align-self-center">
+        <v-icon icon="mdi-chevron-left" color="grey-darken-1" size="30"></v-icon>
+      </v-col>
+      <v-col cols="11">
+        <div class="d-flex bgPrimaryColor justify-space-between align-center">
+          <p class="text-grey-darken-3">要保人同意書</p>
+          <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
+        </div>
+      </v-col>
+    </v-row>
+    <v-row>
+      <!-- 切換頁籤按鈕 -->
+      <v-col cols="1">
+        <SwitchSideBarRead />
+      </v-col>
+
+      <!-- 保書、合約書內容 -->
+      <v-col cols="11">
+        <v-sheet class="bgPrimaryColor position-relative">
+          <v-sheet
+            ref="scrollContainerRef"
+            class="d-flex justify-center border-xl overflow-y-auto overflow-x-hidden"
+            max-height="490"
+            @scroll="detectBottom"
+          >
+            <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
+              <!-- <SignaturedNavbar /> -->
+            </v-sheet>
+            <CanvasViewer />
+          </v-sheet>
+        </v-sheet>
+
+        <!-- 下一步按鈕 -->
+        <v-layout row wrap class="justify-center mt-5">
+          <v-btn
+            density="comfortable"
+            color="blue-darken-4"
+            size="x-large"
+            class="bg-white mr-5"
+            variant="text"
+            width="250"
+            >儲存
+          </v-btn>
+          <v-btn
+            density="comfortable"
+            color="white"
+            size="x-large"
+            width="250"
+            class="bg-blue-darken-4"
+            :disabled="!store.buttonEnabled"
+            >下一步
+          </v-btn>
+        </v-layout>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<style lang="scss" scoped>
+.bgPrimaryColor {
+  background-color: #f2f6ff;
+}
+
+.step--completed {
+  border: 2px solid rgba(var(--v-theme-primary), 1);
+}
+
+.step--editing {
+  border: 2px solid rgba(var(--v-theme-secondary), 1);
+}
+</style>
+
+
+
+
+src\stores\signature.js
+import { defineStore } from 'pinia';
+import { ref, watch } from 'vue';
+import { fromUrl } from 'geotiff'
+
+export const useInsureanceStore = defineStore('insureance', () => {
+  const insureanceData = ref([
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書1',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人簽名',
+          cordinate: { x: 522, y: 266 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '被保險人簽名',
+          cordinate: { x: 522, y: 346 },
+          isSinged: true
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '法定代理人簽名',
+          cordinate: { x: 655, y: 443 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '關係',
+          cordinate: { x: 1064, y: 449 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '被保險人配偶簽名',
+          cordinate: { x: 522, y: 224 },
+          isSinged: false
+        },
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '被保險人子女簽名',
+          cordinate: { x: 522, y: 274 },
+          isSinged: false
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm1.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書2',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: true
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書3',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書4',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm4.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書5',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書5',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm6.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    },
+    {
+      type: 'sign',
+      insueranceId: Math.floor(Math.random() * 10000),
+      title: '要保書5',
+      signature: [
+        {
+          sinatureId: Math.floor(Math.random() * 10000),
+          signatureTitle: '要保人同意同投保',
+          cordinate: { x: 100, y: 200 },
+          isSinged: true
+        }
+      ],
+      tiffUrl: '/ag_ieasy_confirm7.tiff?url',
+      isSignaturing: true,
+      allSignatureComplete: false
+    }
+  ]);
+
+  const insureanceSaleReadDoc = ref([
+    {
+      type: 'read',
+      salseDocId: Math.floor(Math.random() * 10000),
+      title: '業務書1',
+      tiffUrl: '/ag_ieasy_confirm.tiff?url',
+      readComplete: false
+    },
+    {
+      type: 'read',
+      salseDocId: Math.floor(Math.random() * 10000),
+      title: '業務書2',
+      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
+      readComplete: false
+    },
+    {
+      type: 'read',
+      salseDocId: Math.floor(Math.random() * 10000),
+      title: '業務書3',
+      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
+      readComplete: false
+    },
+  ])
+
+  const currentPage = ref(0);
+  const buttonEnabled = ref(false);
+  const renderedCanvas = ref(null);
+  const isLoading = ref(true)
+  const scrollContainerRef = ref(null);
+
+  function setScrollContainer(el) {
+    scrollContainerRef.value = el;
+  }
+
+  async function renderInsureanceDoc() {
+    const currentDoc = insureanceData.value[currentPage.value];
+    if (!currentDoc || !currentDoc.tiffUrl) {
+      renderedCanvas.value = null;
+      return null;
+    }
+
+    try {
+      isLoading.value = true
+      const tiff = await fromUrl(currentDoc.tiffUrl);
+      const image = await tiff.getImage();
+      const raster = await image.readRasters({ interleave: true });
+      const canvas = document.createElement('canvas');
+      const width = image.getWidth();
+      const height = image.getHeight();
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.createImageData(width, height);
+
+      canvas.width = width;
+      canvas.height = height;
+
+      for (let i = 0; i < width * height; i++) {
+        const r16 = raster[i * 4];
+        const g16 = raster[i * 4 + 1];
+        const b16 = raster[i * 4 + 2];
+        const a16 = raster[i * 4 + 3];
+
+        const r = (r16 * 255) / 65535;
+        const g = (g16 * 255) / 65535;
+        const b = (b16 * 255) / 65535;
+        const a = (a16 * 255) / 65535;
+
+        imageData.data[i * 4] = r;
+        imageData.data[i * 4 + 1] = g;
+        imageData.data[i * 4 + 2] = b;
+        imageData.data[i * 4 + 3] = a;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      renderedCanvas.value = canvas;
+      isLoading.value = false
+      console.log(`canvas => `, canvas)
+      return canvas;
+    } catch (error) {
+      isLoading.value = false
+      console.error('渲染 TIFF 失敗:', error);
+      renderedCanvas.value = null;
+      return null;
+    }
+  }
+
+
+  async function switchPage({ index = currentPage.value, type = '' }) {
+    buttonEnabled.value = false;
+    if (type === 'divide' && currentPage.value === 0) return;
+    if (type === 'plus' && currentPage.value === insureanceData.value.length - 1) return;
+
+    insureanceSaleReadDoc.value[1].readComplete = false;
+    if (type === 'plus') {
+      currentPage.value++;
+    } else if (type === 'divide') {
+      currentPage.value--;
+    } else if (index !== currentPage.value) {
+      currentPage.value = index;
+      insureanceSaleReadDoc.value[1].readComplete = false;
+    }
+
+    await renderInsureanceDoc();
+  }
+
+
+
+
+  watch(currentPage, async () => {
+    await renderInsureanceDoc();
+  });
+
+  return {
+    insureanceData,
+    currentPage,
+    buttonEnabled,
+    switchPage,
+    renderInsureanceDoc,
+    insureanceSaleReadDoc,
+    renderedCanvas,
+    isLoading,
+
+    scrollContainerRef,
+    setScrollContainer
+  };
+});

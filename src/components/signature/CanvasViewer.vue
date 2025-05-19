@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, defineProps, nextTick, defineExpose } from 'vue';
+import { onMounted, ref, nextTick, defineExpose } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 const { documents } = defineProps(['documents']);
 console.log(`documents => `, documents);

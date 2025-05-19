@@ -1,113 +1,18 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
+import InsureanceMoc from '@/mocks/InsureanceMoc.json'
 
 export const useInsureanceStore = defineStore('insureance', () => {
-  const insureanceData = ref([
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書1',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人簽名',
-          cordinate: { x: 522, y: 266 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '被保險人簽名',
-          cordinate: { x: 522, y: 346 },
-          isSinged: true
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '法定代理人簽名',
-          cordinate: { x: 655, y: 443 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '關係',
-          cordinate: { x: 1064, y: 449 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '被保險人配偶簽名',
-          cordinate: { x: 522, y: 224 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '被保險人子女簽名',
-          cordinate: { x: 522, y: 274 },
-          isSinged: false
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm7.tiff?url',
-      isSignaturing: true,
-      readComplete: false,
-      pageHeight: 0,
-      allSignatureComplete: true
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書2',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm6.tiff?url',
-      isSignaturing: true,
-      readComplete: false,
-      pageHeight: 0,
-      allSignatureComplete: true
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書3',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
-      isSignaturing: true,
-      readComplete: false,
-      pageHeight: 0,
-      allSignatureComplete: true
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書4',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm4.tiff?url',
-      isSignaturing: true,
-      readComplete: false,
-      pageHeight: 0,
-      allSignatureComplete: true
-    },
+  console.log(`InsureanceMoc => `, InsureanceMoc)
+  const insureanceData = ref(
+    InsureanceMoc.map(doc => ({
+      ...doc,
+      pageHeight: 0
+    }))
+  );
+  console.log(`insureanceData => `, insureanceData)
 
-  ]);
 
   type Stage = 'preview' | 'sign1' | 'sign2';
   const stage = ref<Stage>('preview');
@@ -119,7 +24,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
       return insureanceData.value.every(doc => doc.readComplete);
     }
     if (stage.value === 'sign1' || stage.value === 'sign2') {
-      return insureanceData.value.every(doc => doc.allSignatureComplete);
+      return insureanceData.value.every(doc =>
+        doc.signature.every(sig => sig.signImg && sig.signImg.trim() !== '')
+      );
     }
     return false;
   });
@@ -251,6 +158,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     scrollToPage,
     eableNextButton,
     goToNextStage,
-    currentDocs
+    currentDocs,
+
   };
 });

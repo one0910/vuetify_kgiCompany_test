@@ -1,0 +1,119 @@
+[
+  {
+    "type": "sign",
+    "insueranceId": 1234,
+    "title": "要保書1",
+    "signature": [
+      {
+        "sinatureId": 1001,
+        "signatureTitle": "要保人簽名",
+        "cordinate": {
+          "x": 522,
+          "y": 266
+        },
+        "signImg": ""
+      },
+      {
+        "sinatureId": 1002,
+        "signatureTitle": "被保險人簽名",
+        "cordinate": {
+          "x": 522,
+          "y": 346
+        },
+        "signImg": "412341234"
+      },
+      {
+        "sinatureId": 1003,
+        "signatureTitle": "法定代理人簽名",
+        "cordinate": {
+          "x": 655,
+          "y": 443
+        },
+        "signImg": "412341234"
+      },
+      {
+        "sinatureId": 1004,
+        "signatureTitle": "關係",
+        "cordinate": {
+          "x": 1064,
+          "y": 449
+        },
+        "signImg": "412341234"
+      },
+      {
+        "sinatureId": 1005,
+        "signatureTitle": "被保險人配偶簽名",
+        "cordinate": {
+          "x": 522,
+          "y": 224
+        },
+        "signImg": "412341234"
+      },
+      {
+        "sinatureId": 1006,
+        "signatureTitle": "被保險人子女簽名",
+        "cordinate": {
+          "x": 522,
+          "y": 274
+        },
+        "signImg": "412341234"
+      }
+    ],
+    "tiffUrl": "/ag_ieasy_confirm7.tiff?url",
+    "readComplete": false
+  },
+  {
+    "type": "sign",
+    "insueranceId": 5678,
+    "title": "要保書2",
+    "signature": [
+      {
+        "sinatureId": 2001,
+        "signatureTitle": "要保人同意同投保",
+        "cordinate": {
+          "x": 100,
+          "y": 200
+        },
+        "signImg": "412341234"
+      }
+    ],
+    "tiffUrl": "/ag_ieasy_confirm6.tiff?url",
+    "readComplete": false
+  },
+  {
+    "type": "sign",
+    "insueranceId": 9012,
+    "title": "要保書3",
+    "signature": [
+      {
+        "sinatureId": 3001,
+        "signatureTitle": "要保人同意同投保",
+        "cordinate": {
+          "x": 100,
+          "y": 200
+        },
+        "signImg": "412341234"
+      }
+    ],
+    "tiffUrl": "/ag_ieasy_confirm5.tiff?url",
+    "readComplete": false
+  },
+  {
+    "type": "sign",
+    "insueranceId": 3456,
+    "title": "要保書4",
+    "signature": [
+      {
+        "sinatureId": 4001,
+        "signatureTitle": "要保人同意同投保",
+        "cordinate": {
+          "x": 100,
+          "y": 200
+        },
+        "signImg": "412341234"
+      }
+    ],
+    "tiffUrl": "/ag_ieasy_confirm4.tiff?url",
+    "readComplete": false
+  }
+]

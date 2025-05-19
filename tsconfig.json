@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "strict": false,
+    "allowJs": true, // 如果你還有 .js 檔案
+    "checkJs": false // 避免 TypeScript 檢查 .js 檔案錯誤
+  },
+  "include": ["src"]
+}

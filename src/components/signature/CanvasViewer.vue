@@ -2,6 +2,7 @@
 import { onMounted, ref, defineProps, nextTick, defineExpose } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 const { documents } = defineProps(['documents']);
+console.log(`documents => `, documents);
 
 const store = useInsureanceStore();
 const canvasRef = ref(null);
@@ -54,7 +55,7 @@ defineExpose({
     ></v-progress-circular>
   </v-sheet>
 
-  <div ref="canvasRef" v-show="!store.isLoading" class="canvas-container border-xl,"></div>
+  <div ref="canvasRef" v-show="!store.isLoading" class="canvas-container border-xl"></div>
 </template>
 
 <style lang="scss" scoped>

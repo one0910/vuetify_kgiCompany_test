@@ -1,32 +1,20 @@
-我現在有個資料結構的問題,需要你給我意見 VButtonList是最上層的頁面,它裡面個子組件CanvasViewer, 而 
-它裡面個子組件CanvasViewer裡的資料會從src\stores\signature.js去取得,並且append到html裡
-由於我的專案裡在VButtonList頁面裡會有不同類型的文件資料，例如我現在放在store裡的policyholderSignature、salesDocPreview、salesDocSignature
-那我希望一開始我的CanvasViewer 它所append的資料是policyholderSignature然後等allSignatureComplete都為true的時候,VButtonList.vue才可以按下一步, 
-下一步後CanvasViewer裡它append的資料則變成salesDocPreview,然後等salesDocPreview裡的readComplete都為true時,,VButtonList.vue才可以再按下一步
-下一步後CanvasViewer裡它append的資料則變成salesDocSignature,然後等salesDocSignature裡的allSignatureComplete都為true時,VButtonList.vue才可以再按下一步
+我改好了, 你看一下我目前的檔案,你認為如何, 有哪需要再改進的嗎?
 
-下面是3個檔案的程式碼, 上面的說明不知道你清不清楚,我正在思考要怎麼去做這樣的結構,你認為我分別拆分VButtonList1、VButtonList2、VButtonList3個router頁面來做(這樣做我認可能比較簡單點)
-還是說可以依我目前的結構,我一樣可以共用VButtonList這個路由頁面、一樣可以共用CanvasViewer的子組件、及store signature, 只是這樣我的邏輯就要寫的很清楚也要拆的乾淨, 但這難度比較高
-所以我想聽聽你的意見,並給我合適的答案及做法
-
-
-檔案一src\views\Front-stage\VButtonList.vue
+檔案一 src\views\Front-stage\VButtonList.vue
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, nextTick } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 import SwitchSideBarRead from '@/components/signature/SwitchSideBar-Read.vue';
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
-import { useMediaCheck } from '@/composable/useMediaCheck';
 
 const store = useInsureanceStore();
 const scrollContainerRef = ref(null);
+const canvasViewerRef = ref();
 const maxHeight = ref(450);
-const { isTablet } = useMediaCheck();
-const DataLenght = store.salesDocPreview.length;
-console.log(isTablet => , isTablet.value);
 
 function detectBottom(event) {
   if (!(event.target instanceof HTMLElement)) return;
+  if (store.stage !== 'preview') return;
   const { scrollTop, scrollHeight, clientHeight } = event.target;
   const scrollPosition = scrollTop + clientHeight;
 
@@ -34,7 +22,7 @@ function detectBottom(event) {
 
   if (scrollHeight <= clientHeight + 1) return;
 
-  store.salesDocPreview.forEach((doc, index) => {
+  store.currentDocs.forEach((doc, index) => {
     const pageHeight = doc.pageHeight || 0;
     const pageTop = cumulativeHeight;
     let pageBottom = cumulativeHeight + pageHeight;
@@ -48,13 +36,13 @@ function detectBottom(event) {
 
     if (isRead && store.currentPage === index) {
       doc.readComplete = true;
-      console.log(✅ 第 ${index + 1} 頁已閱讀完畢);
+      console.log(`✅ 第 ${index + 1} 頁已閱讀完畢`);
     }
 
     if (isInView) {
       if (store.currentPage !== index) {
         store.currentPage = index;
-        console.log(👉 現在位於第 ${index + 1} 頁);
+        console.log(`👉 現在位於第 ${index + 1} 頁`);
       }
     }
 
@@ -63,16 +51,17 @@ function detectBottom(event) {
 }
 
 function nextStep() {
-  const el = scrollContainerRef.value?.$el;
-  el.removeEventListener('scroll', detectBottom);
-  alert('下一步');
+  store.goToNextStage();
+  nextTick(() => {
+    canvasViewerRef.value?.renderAllCanvas();
+  });
 }
 
 onMounted(() => {
   const el = scrollContainerRef.value?.$el;
   if (el instanceof HTMLElement) {
     el.addEventListener('scroll', detectBottom);
-    maxHeight.value = screen.availHeight * 0.61;
+    maxHeight.value = screen.availHeight * 0.62;
     store.setScrollContainer(el);
   } else return;
 });
@@ -123,7 +112,7 @@ watch(
               <!-- <SignaturedNavbar /> -->
             </v-sheet>
             <div>
-              <CanvasViewer />
+              <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />
             </div>
           </v-sheet>
         </v-sheet>
@@ -145,7 +134,7 @@ watch(
             size="x-large"
             width="250"
             class="bg-blue-darken-4"
-            :disabled="!store.nextButton"
+            :disabled="!store.eableNextButton"
             @click="nextStep"
             >下一步
           </v-btn>
@@ -169,26 +158,52 @@ watch(
 }
 </style>
 
-src\components\signature\CanvasViewer.vue
+
+檔案二 src\components\signature\CanvasViewer.vue
 <script setup>
-import { onMounted, ref, watch, nextTick } from 'vue';
+import { onMounted, ref, defineProps, nextTick, defineExpose } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
+const { documents } = defineProps(['documents']);
+console.log(`documents => `, documents);
 
 const store = useInsureanceStore();
 const canvasRef = ref(null);
+const isLoading = ref(false);
 
 // 首次掛載時也更新一次畫布
-onMounted(async () => {
+async function renderAllCanvas() {
+  if (!canvasRef.value) return;
+
+  isLoading.value = true;
   canvasRef.value.innerHTML = '';
-  for (let i = 0; i < store.salesDocPreview.length; i++) {
-    const canvas = await store.renderInsureanceDoc(i);
+  for (let i = 0; i < documents.length; i++) {
+    const canvas = await store.renderInsureanceDoc(documents[i]);
     if (canvas) {
       canvasRef.value.appendChild(canvas);
+      await nextTick();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      console.log(`canvasRef.value.innerHTML => `, canvasRef.value.innerHTML);
       const domHeight = canvas.offsetHeight;
-      store.salesDocPreview[i].pageHeight = domHeight;
-      console.log(📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px);
+      documents[i].pageHeight = domHeight;
+      console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
     }
   }
+  isLoading.value = false;
+}
+
+onMounted(async () => {
+  await renderAllCanvas();
+});
+
+// watch(
+//   () => store.stage,
+//   async () => {
+//     await nextTick(); // 確保 DOM 已更新
+//     await renderAllCanvas();
+//   }
+// );
+defineExpose({
+  renderAllCanvas
 });
 </script>
 
@@ -198,7 +213,7 @@ onMounted(async () => {
       color="grey-darken-1"
       indeterminate
       size="40"
-      v-show="store.isLoading"
+      v-show="isLoading"
     ></v-progress-circular>
   </v-sheet>
 
@@ -214,59 +229,13 @@ onMounted(async () => {
 }
 </style>
 
-檔案二src\components\signature\CanvasViewer.vue
-
-<script setup>
-import { onMounted, ref, watch, nextTick } from 'vue';
-import { useInsureanceStore } from '@/stores/signature';
-
-const store = useInsureanceStore();
-const canvasRef = ref(null);
-
-// 首次掛載時也更新一次畫布
-onMounted(async () => {
-  canvasRef.value.innerHTML = '';
-  for (let i = 0; i < store.salesDocPreview.length; i++) {
-    const canvas = await store.renderInsureanceDoc(i);
-    if (canvas) {
-      canvasRef.value.appendChild(canvas);
-      const domHeight = canvas.offsetHeight;
-      store.salesDocPreview[i].pageHeight = domHeight;
-      console.log(📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px);
-    }
-  }
-});
-</script>
-
-<template>
-  <v-sheet class="d-flex justify-center align-center">
-    <v-progress-circular
-      color="grey-darken-1"
-      indeterminate
-      size="40"
-      v-show="store.isLoading"
-    ></v-progress-circular>
-  </v-sheet>
-
-  <div ref="canvasRef" v-show="!store.isLoading" class="canvas-container border-xl"></div>
-</template>
-
-<style lang="scss" scoped>
-.canvas-container :deep(canvas) {
-  max-width: 100%;
-  border-bottom: 5px solid rgba(0, 0, 0, 0.2);
-  display: block;
-  margin: auto;
-}
-</style>
-
-檔案三 src\stores\signature.js
+檔案三 src\stores\signature.ts
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
 
 export const useInsureanceStore = defineStore('insureance', () => {
-  const policyholderSignature = ref([
+  const insureanceData = ref([
     {
       type: 'sign',
       insueranceId: Math.floor(Math.random() * 10000),
@@ -309,9 +278,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: false
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm1.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm7.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      readComplete: false,
+      pageHeight: 0,
+      allSignatureComplete: true
     },
     {
       type: 'sign',
@@ -325,8 +296,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: true
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm6.tiff?url',
       isSignaturing: true,
+      readComplete: false,
+      pageHeight: 0,
       allSignatureComplete: true
     },
     {
@@ -341,9 +314,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
           isSinged: true
         }
       ],
-      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
+      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
+      readComplete: false,
+      pageHeight: 0,
+      allSignatureComplete: true
     },
     {
       type: 'sign',
@@ -359,189 +334,56 @@ export const useInsureanceStore = defineStore('insureance', () => {
       ],
       tiffUrl: '/ag_ieasy_confirm4.tiff?url',
       isSignaturing: true,
-      allSignatureComplete: false
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書5',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm5.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書5',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm6.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書5',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm7.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    }
-  ]);
-
-  const salesDocPreview = ref([
-    {
-      type: 'read',
-      salseDocId: Math.floor(Math.random() * 10000),
-      title: '業務書1',
-      tiffUrl: '/ag_ieasy_confirm.tiff',
       readComplete: false,
-      pageHeight: 0
-    },
-    {
-      type: 'read',
-      salseDocId: Math.floor(Math.random() * 10000),
-      title: '業務書2',
-      tiffUrl: '/ag_ieasy_confirm2.tiff',
-      readComplete: false,
-      pageHeight: 0
-    },
-    {
-      type: 'read',
-      salseDocId: Math.floor(Math.random() * 10000),
-      title: '業務書3',
-      tiffUrl: '/ag_ieasy_confirm3.tiff',
-      readComplete: false,
-      pageHeight: 0
-    },
-  ])
-
-  const salesDocSignature = ref([
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書1',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人簽名',
-          cordinate: { x: 522, y: 266 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '被保險人簽名',
-          cordinate: { x: 522, y: 346 },
-          isSinged: true
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '法定代理人簽名',
-          cordinate: { x: 655, y: 443 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '關係',
-          cordinate: { x: 1064, y: 449 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '被保險人配偶簽名',
-          cordinate: { x: 522, y: 224 },
-          isSinged: false
-        },
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '被保險人子女簽名',
-          cordinate: { x: 522, y: 274 },
-          isSinged: false
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm1.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書2',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm2.tiff?url',
-      isSignaturing: true,
+      pageHeight: 0,
       allSignatureComplete: true
     },
-    {
-      type: 'sign',
-      insueranceId: Math.floor(Math.random() * 10000),
-      title: '要保書3',
-      signature: [
-        {
-          sinatureId: Math.floor(Math.random() * 10000),
-          signatureTitle: '要保人同意同投保',
-          cordinate: { x: 100, y: 200 },
-          isSinged: true
-        }
-      ],
-      tiffUrl: '/ag_ieasy_confirm3.tiff?url',
-      isSignaturing: true,
-      allSignatureComplete: false
-    },
-  ])
 
+  ]);
+
+  type Stage = 'preview' | 'sign1' | 'sign2';
+  const stage = ref<Stage>('preview');
+
+  const currentDocs = computed(() => insureanceData.value);
+
+  const eableNextButton = computed(() => {
+    if (stage.value === 'preview') {
+      return insureanceData.value.every(doc => doc.readComplete);
+    }
+    if (stage.value === 'sign1' || stage.value === 'sign2') {
+      return insureanceData.value.every(doc => doc.allSignatureComplete);
+    }
+    return false;
+  });
 
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
-  const nextButton = computed(() =>
-    salesDocPreview.value.every(doc => doc.readComplete === true)
-  );
+
 
   function setScrollContainer(el) {
     scrollContainerRef.value = el;
   }
 
-  async function renderInsureanceDoc(page) {
-    const currentDoc = salesDocPreview.value[page];
-    if (!currentDoc || !currentDoc.tiffUrl) {
-      renderedCanvas.value = null;
-      return null;
+  function goToNextStage() {
+    if (stage.value === 'preview') {
+      stage.value = 'sign1';
+    } else if (stage.value === 'sign1') {
+      stage.value = 'sign2';
+    } else {
+      console.log('✅ 所有步驟完成');
     }
+    currentPage.value = 0;
+  }
+
+
+  async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
+    const tiffUrl = doc.tiffUrl;
 
     try {
       isLoading.value = true
-      const response = await fetch(currentDoc.tiffUrl)
+      const response = await fetch(tiffUrl)
       const arrayBuffer = await response.arrayBuffer()
       const tiff = await fromArrayBuffer(arrayBuffer)
       const image = await tiff.getImage();
@@ -557,10 +399,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
       // salesDocPreview.value[page].pageHeight = height
 
       for (let i = 0; i < width * height; i++) {
-        const r16 = raster[i * 4];
-        const g16 = raster[i * 4 + 1];
-        const b16 = raster[i * 4 + 2];
-        const a16 = raster[i * 4 + 3];
+        const r16 = raster[i * 4] as any;
+        const g16 = raster[i * 4 + 1] as any;
+        const b16 = raster[i * 4 + 2] as any;
+        const a16 = raster[i * 4 + 3] as any;
 
         const r = (r16 * 255) / 65535;
         const g = (g16 * 255) / 65535;
@@ -614,7 +456,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
     let targetTop = 0;
 
     for (let i = 0; i < pageIndex; i++) {
-      const height = salesDocPreview.value[i]?.pageHeight || 0;
+      const doc = currentDocs.value[i];
+      const height = (stage.value === 'preview' && 'pageHeight' in doc) ? doc.pageHeight : 0;
       targetTop += height;
     }
 
@@ -624,20 +467,22 @@ export const useInsureanceStore = defineStore('insureance', () => {
     });
 
 
-    console.log(🔍 滾動至第 ${pageIndex + 1} 頁，位置 ${targetTop}px);
+    console.log(`🔍 滾動至第 ${pageIndex + 1} 頁，位置 ${targetTop}px`);
   }
 
   return {
-    policyholderSignature,
+    stage,
+    insureanceData,
     currentPage,
     switchPage,
     renderInsureanceDoc,
-    salesDocPreview,
     renderedCanvas,
     isLoading,
     scrollContainerRef,
     setScrollContainer,
     scrollToPage,
-    nextButton
+    eableNextButton,
+    goToNextStage,
+    currentDocs
   };
 });

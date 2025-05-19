@@ -11,7 +11,7 @@ const maxHeight = ref(450);
 
 function detectBottom(event) {
   if (!(event.target instanceof HTMLElement)) return;
-  if (store.stage !== 'salesDocPreview') return;
+  if (store.stage !== 'preview') return;
   const { scrollTop, scrollHeight, clientHeight } = event.target;
   const scrollPosition = scrollTop + clientHeight;
 
@@ -19,7 +19,7 @@ function detectBottom(event) {
 
   if (scrollHeight <= clientHeight + 1) return;
 
-  store.salesDocPreview.forEach((doc, index) => {
+  store.currentDocs.forEach((doc, index) => {
     const pageHeight = doc.pageHeight || 0;
     const pageTop = cumulativeHeight;
     let pageBottom = cumulativeHeight + pageHeight;

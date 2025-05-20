@@ -54,7 +54,8 @@ function nextStep() {
   });
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await store.fetchInsureanceDocs();
   const el = scrollContainerRef.value?.$el;
   if (el instanceof HTMLElement) {
     el.addEventListener('scroll', detectBottom);
@@ -73,6 +74,16 @@ watch(
     requestAnimationFrame(() => {
       el.addEventListener('scroll', detectBottom);
     });
+  }
+);
+watch(
+  () => store.insureanceData.length,
+  (length) => {
+    if (length > 0) {
+      nextTick(() => {
+        canvasViewerRef.value?.renderAllCanvas();
+      });
+    }
   }
 );
 </script>

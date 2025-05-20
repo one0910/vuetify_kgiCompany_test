@@ -1,18 +1,14 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
 import InsureanceMoc from '@/mocks/InsureanceMoc.json'
+import Insureance from '@/mocks/Insureance.json'
+import { getSignatureDoc } from '@/service/documentSignature';
+
+
 
 export const useInsureanceStore = defineStore('insureance', () => {
-  console.log(`InsureanceMoc => `, InsureanceMoc)
-  const insureanceData = ref(
-    InsureanceMoc.map(doc => ({
-      ...doc,
-      pageHeight: 0
-    }))
-  );
-  console.log(`insureanceData => `, insureanceData)
-
+  const insureanceData = ref<any[]>([]);
 
   type Stage = 'preview' | 'sign1' | 'sign2';
   const stage = ref<Stage>('preview');
@@ -25,7 +21,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     }
     if (stage.value === 'sign1' || stage.value === 'sign2') {
       return insureanceData.value.every(doc =>
-        doc.signature.every(sig => sig.signImg && sig.signImg.trim() !== '')
+        doc.signature.every((sig: { signImg: string; }) => sig.signImg && sig.signImg.trim() !== '')
       );
     }
     return false;
@@ -36,8 +32,19 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
 
+  async function fetchInsureanceDocs() {
+    const data = await getSignatureDoc();
+    if (data) {
+      insureanceData.value = data.map((item: any) => ({
+        ...item,
+        pageHeight: 0,
+        readComplete: false
+      }));
+    }
+  }
 
-  function setScrollContainer(el) {
+
+  function setScrollContainer(el: any) {
     scrollContainerRef.value = el;
   }
 
@@ -123,7 +130,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // }
   }
 
-  function scrollToPage(pageIndex) {
+  function scrollToPage(pageIndex: number) {
 
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value;
     if (!(el instanceof HTMLElement)) return;
@@ -145,6 +152,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     console.log(`🔍 滾動至第 ${pageIndex + 1} 頁，位置 ${targetTop}px`);
   }
 
+
   return {
     stage,
     insureanceData,
@@ -159,6 +167,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     eableNextButton,
     goToNextStage,
     currentDocs,
-
+    fetchInsureanceDocs
   };
 });

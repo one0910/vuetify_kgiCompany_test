@@ -1,21 +1,28 @@
 import { defineStore } from 'pinia';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
-import InsureanceMoc from '@/mocks/InsureanceMoc.json'
-import Insureance from '@/mocks/Insureance.json'
 import { getSignatureDoc } from '@/service/documentSignature';
-
+import { typeMapRole } from '@/utility/roleMap';
 
 
 export const useInsureanceStore = defineStore('insureance', () => {
+
   const insureanceData = ref<any[]>([]);
 
   type Stage = 'preview' | 'sign1' | 'sign2';
+  type SignStatus = 'unselected' | 'unsigned' | 'signed';
   const stage = ref<Stage>('preview');
+  const currentRole = ref(9)
+  const currentPage = ref(0);
+  const renderedCanvas = ref(null);
+  const isLoading = ref(true)
+  const scrollContainerRef = ref(null);
+  const signatureButton = ref<any[]>([]);
 
   const currentDocs = computed(() => insureanceData.value);
 
-  const eableNextButton = computed(() => {
+  //是否啟用下一步的按鈕
+  const enableNextButton = computed(() => {
     if (stage.value === 'preview') {
       return insureanceData.value.every(doc => doc.readComplete);
     }
@@ -27,27 +34,96 @@ export const useInsureanceStore = defineStore('insureance', () => {
     return false;
   });
 
-  const currentPage = ref(0);
-  const renderedCanvas = ref(null);
-  const isLoading = ref(true)
-  const scrollContainerRef = ref(null);
 
+  // 後端傳來的資料做好整理後放至insureanceData
   async function fetchInsureanceDocs() {
     const data = await getSignatureDoc();
-    if (data) {
-      insureanceData.value = data.map((item: any) => ({
-        ...item,
-        pageHeight: 0,
-        readComplete: false
-      }));
+    if (!data) return;
+
+    const { form, sign } = data;
+
+    // 將 sign 根據 form 分組
+    const groupedSignatures = sign.reduce((acc: Record<string, any[]>, sig) => {
+      if (!acc[sig.form]) acc[sig.form] = [];
+      acc[sig.form].push(sig);
+      return acc;
+    }, {});
+
+    // 將 form 結合對應的 signature
+    const transformedData = form.map((item: any, index: number) => ({
+      ...item,
+      pageIndex: index,
+      signature: groupedSignatures[item.form] || [],
+      pageHeight: 0,
+    }));
+
+    console.log(`transformedData => `, transformedData)
+    insureanceData.value = transformedData;
+
+    signatureButton.value = [];
+
+    for (const doc of transformedData) {
+      for (const sig of doc.signature || []) {
+        const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
+        signatureButton.value.push({
+          ...sig,
+          type: parseInt(sig.type),
+          pageIndex: doc.pageIndex,
+          form: doc.form,
+          tiffUrl: doc.tiffUrl,
+          signedStatus: status
+        });
+      }
     }
   }
 
+  //簽名頁sideBar的按鈕
+  // const signatureButton = computed(() => {
+  //   const result = []
+  //   for (const doc of insureanceData.value) {
+  //     for (const sig of doc.signature || []) {
+  //       const status: SignStatus = (sig.signimg?.trim()) ? 'signed' : 'unselected';
+  //       result.push({
+  //         ...sig,
+  //         type: parseInt(sig.type),
+  //         pageIndex: doc.pageIndex,
+  //         form: doc.form,
+  //         tiffUrl: doc.tiffUrl,
+  //         signedStatus: status,
+  //       })
+  //     }
+  //   }
+  //   return result
+  // })
 
+  //角色列按鈕
+  const signatureRoleType = computed(() => {
+    const seen = new Set<number>()
+    const result: { type: number; name: string, allSignedComplete: boolean }[] = []
+
+    for (const item of signatureButton.value) {
+      if (!seen.has(item.type)) {
+        seen.add(item.type)
+        const buttonsOfThisType = signatureButton.value.filter(btn => btn.type === item.type)
+        const allSigned = buttonsOfThisType.every(btn => !!btn.signimg?.trim())
+        result.push({
+          type: item.type,
+          name: typeMapRole[item.type] || `未知角色 ${item.type}`,
+          allSignedComplete: allSigned
+        })
+      }
+    }
+    return result
+  })
+
+
+
+  //引用Canvas組件的參考
   function setScrollContainer(el: any) {
     scrollContainerRef.value = el;
   }
 
+  //前進到下一步
   function goToNextStage() {
     if (stage.value === 'preview') {
       stage.value = 'sign1';
@@ -110,6 +186,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
 
+  //換頁籤切換功能
   async function switchPage({ index = currentPage.value, type = '' }) {
     isLoading.value = false
     if (type === 'last' && currentPage.value === 0) return;
@@ -130,6 +207,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // }
   }
 
+  //滑行滾輪移動到該頁
   function scrollToPage(pageIndex: number) {
 
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value;
@@ -157,6 +235,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     stage,
     insureanceData,
     currentPage,
+    currentRole,
     switchPage,
     renderInsureanceDoc,
     renderedCanvas,
@@ -164,9 +243,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
     scrollContainerRef,
     setScrollContainer,
     scrollToPage,
-    eableNextButton,
+    enableNextButton,
     goToNextStage,
     currentDocs,
-    fetchInsureanceDocs
+    fetchInsureanceDocs,
+    signatureButton,
+    signatureRoleType
   };
 });

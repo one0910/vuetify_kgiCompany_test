@@ -2,7 +2,6 @@
 import { onMounted, ref, nextTick, defineExpose } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 const { documents } = defineProps(['documents']);
-console.log(`documents => `, documents);
 
 const store = useInsureanceStore();
 const canvasRef = ref(null);
@@ -20,10 +19,9 @@ async function renderAllCanvas() {
       canvasRef.value.appendChild(canvas);
       await nextTick();
       await new Promise((resolve) => requestAnimationFrame(resolve));
-      console.log(`canvasRef.value.innerHTML => `, canvasRef.value.innerHTML);
       const domHeight = canvas.offsetHeight;
       documents[i].pageHeight = domHeight;
-      console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
+      // console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
     }
   }
   isLoading.value = false;

@@ -2,6 +2,9 @@
 import { onMounted, ref, watch, nextTick } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 import SwitchSideBarRead from '@/components/signature/SwitchSideBar-Read.vue';
+import SwitchSideBarSign from '@/components/signature/SwitchSideBar-Sign.vue';
+import SignaturedNavbar from '@/components/signature/SignaturedNavbar.vue';
+
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
 
 const store = useInsureanceStore();
@@ -105,7 +108,8 @@ watch(
     <v-row>
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
-        <SwitchSideBarRead />
+        <SwitchSideBarRead v-if="store.stage === 'preview'" />
+        <SwitchSideBarSign v-else />
       </v-col>
 
       <!-- 保書、合約書內容 -->
@@ -117,7 +121,7 @@ watch(
             :max-height="maxHeight"
           >
             <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
-              <!-- <SignaturedNavbar /> -->
+              <SignaturedNavbar v-if="store.stage !== 'preview'" />
             </v-sheet>
             <div>
               <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />
@@ -142,7 +146,7 @@ watch(
             size="x-large"
             width="250"
             class="bg-blue-darken-4"
-            :disabled="!store.eableNextButton"
+            :disabled="!store.enableNextButton"
             @click="nextStep"
             >下一步
           </v-btn>

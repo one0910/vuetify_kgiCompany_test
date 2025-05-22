@@ -1,17 +1,49 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 
 const store = useInsureanceStore();
-
-const policyholderSignature = computed(() => store.policyholderSignature);
 const currentPage = computed(() => store.currentPage);
+async function setSignatureButton() {
+  console.log(`store.signatureButton => `, store.signatureButton);
+  store.signatureButton.forEach((button) => {
+    console.log(`1 => `, 1);
+    console.log(`button => `, button);
+    if (store.currentRole === button.type && !button.signimg) {
+      button.signedStatus = 'unsigned';
+    }
+  });
+}
+
+onMounted(() => {
+  watch(
+    () => store.signatureButton,
+    (val) => {
+      if (val.length > 0) {
+        setSignatureButton();
+      }
+    }
+  );
+});
+watch(
+  () => store.currentRole,
+  (role) => {
+    store.signatureButton.forEach((button) => {
+      if (button.type === role) {
+        button.signedStatus = button.signimg?.trim() ? 'signed' : 'unsigned';
+      } else {
+        button.signedStatus = button.signimg?.trim() ? 'signed' : 'unselected';
+      }
+    });
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
   <v-sheet height="350" class="bgPrimaryColor">
     <v-list class="bgPrimaryColor">
-      <v-list-item v-for="(item, index) in policyholderSignature" :key="index" tag="div">
+      <v-list-item v-for="(item, index) in store.signatureButton" :key="index" tag="div">
         <template v-slot>
           <div
             class="d-flex justify-center align-center cursor-pointer"
@@ -21,34 +53,15 @@ const currentPage = computed(() => store.currentPage);
               size="32"
               class="pa-3"
               :class="[
-                index === currentPage
-                  ? 'border-active'
-                  : item.allSignatureComplete
-                    ? 'bg-green'
-                    : 'border-inactive'
+                index === currentPage ? 'border-active' : 'border-inactive',
+                item.signedStatus === 'signed'
+                  ? 'bg-green'
+                  : item.signedStatus === 'unsigned'
+                    ? 'bg-red'
+                    : 'bg-transparent'
               ]"
             >
-              <v-icon
-                v-if="item.allSignatureComplete || index === currentPage"
-                :icon="item.allSignatureComplete ? 'mdi-check' : 'mdi-pencil-outline'"
-                :color="
-                  index === currentPage
-                    ? 'white'
-                    : item.allSignatureComplete
-                      ? 'white'
-                      : 'grey-lighten-1'
-                "
-                :class="[
-                  'rounded-xl',
-                  'pa-3',
-                  item.allSignatureComplete
-                    ? 'bg-green'
-                    : index === currentPage
-                      ? 'bg-red'
-                      : 'bg-transparent'
-                ]"
-                size="15"
-              ></v-icon>
+              <v-icon color="white" size="15" :icon="item.signimg ? 'mdi-check' : ''"></v-icon>
             </v-avatar>
 
             <v-list-item-subtitle

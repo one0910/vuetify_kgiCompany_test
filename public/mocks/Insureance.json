@@ -38,7 +38,20 @@
     }
   ],
   "form": [
-    "B0012412101",
-    "Z0522412101"
+    {
+      "form": "B0012412101",
+      "tiffUrl": "/B0012412101.tiff",
+      "readComplete": false
+    },
+    {
+      "form": "B0012412103",
+      "tiffUrl": "/B0012412103.tiff",
+      "readComplete": false
+    },
+    {
+      "form": "Z0522412101",
+      "tiffUrl": "/Z0522412101.tiff",
+      "readComplete": false
+    }
   ]
 }

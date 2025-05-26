@@ -7,8 +7,6 @@ const currentPage = computed(() => store.currentPage);
 async function setSignatureButton() {
   console.log(`store.signatureButton => `, store.signatureButton);
   store.signatureButton.forEach((button) => {
-    console.log(`1 => `, 1);
-    console.log(`button => `, button);
     if (store.currentRole === button.type && !button.signimg) {
       button.signedStatus = 'unsigned';
     }
@@ -41,9 +39,14 @@ watch(
 </script>
 
 <template>
-  <v-sheet height="350" class="bgPrimaryColor">
+  <v-sheet height="450" class="bgPrimaryColor overflow-y-auto">
     <v-list class="bgPrimaryColor">
-      <v-list-item v-for="(item, index) in store.signatureButton" :key="index" tag="div">
+      <v-list-item
+        v-for="(item, index) in store.signatureButton"
+        :key="index"
+        tag="div"
+        class="px-0"
+      >
         <template v-slot>
           <div
             class="d-flex justify-center align-center cursor-pointer"
@@ -61,7 +64,17 @@ watch(
                     : 'bg-transparent'
               ]"
             >
-              <v-icon color="white" size="15" :icon="item.signimg ? 'mdi-check' : ''"></v-icon>
+              <v-icon
+                color="white"
+                size="15"
+                :icon="
+                  item.signedStatus === 'signed'
+                    ? 'mdi-check'
+                    : item.signedStatus === 'unsigned'
+                      ? 'mdi-pencil-outline'
+                      : ''
+                "
+              />
             </v-avatar>
 
             <v-list-item-subtitle

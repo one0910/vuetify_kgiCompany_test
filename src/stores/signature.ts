@@ -12,7 +12,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   type Stage = 'preview' | 'sign1' | 'sign2';
   type SignStatus = 'unselected' | 'unsigned' | 'signed';
   const stage = ref<Stage>('preview');
-  const currentRole = ref(9)
+  const currentRole = ref(0)
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
@@ -44,25 +44,32 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
     // 將 sign 根據 form 分組
     const groupedSignatures = sign.reduce((acc: Record<string, any[]>, sig) => {
-      if (!acc[sig.form]) acc[sig.form] = [];
+      if (!acc[sig.form]) {
+        acc[sig.form] = [];
+      }
       acc[sig.form].push(sig);
       return acc;
     }, {});
+    console.log(`groupedSignatures => `, groupedSignatures)
 
     // 將 form 結合對應的 signature
-    const transformedData = form.map((item: any, index: number) => ({
-      ...item,
-      pageIndex: index,
-      signature: groupedSignatures[item.form] || [],
-      pageHeight: 0,
-    }));
-
-    console.log(`transformedData => `, transformedData)
+    const transformedData = form.map((item: any, index: number) => {
+      return {
+        ...item,
+        // type:[].push(groupedSignatures) || []
+        pageIndex: index,
+        signature: groupedSignatures[item.form] || [],
+        pageHeight: 0,
+      }
+    });
     insureanceData.value = transformedData;
+    transformToSignatureButtons(transformedData);
+  }
 
-    signatureButton.value = [];
-
-    for (const doc of transformedData) {
+  //再將資料重整至signatureButton
+  function transformToSignatureButtons(docs: any[]) {
+    signatureButton.value = []; // 清空之前的資料
+    for (const doc of docs) {
       for (const sig of doc.signature || []) {
         const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
         signatureButton.value.push({
@@ -77,24 +84,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     }
   }
 
-  //簽名頁sideBar的按鈕
-  // const signatureButton = computed(() => {
-  //   const result = []
-  //   for (const doc of insureanceData.value) {
-  //     for (const sig of doc.signature || []) {
-  //       const status: SignStatus = (sig.signimg?.trim()) ? 'signed' : 'unselected';
-  //       result.push({
-  //         ...sig,
-  //         type: parseInt(sig.type),
-  //         pageIndex: doc.pageIndex,
-  //         form: doc.form,
-  //         tiffUrl: doc.tiffUrl,
-  //         signedStatus: status,
-  //       })
-  //     }
-  //   }
-  //   return result
-  // })
 
   //角色列按鈕
   const signatureRoleType = computed(() => {
@@ -113,6 +102,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         })
       }
     }
+    currentRole.value = result[0]?.type
     return result
   })
 
@@ -137,52 +127,48 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
-    const tiffUrl = doc.tiffUrl;
+    const base64 = doc.tiffUrl;
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-    try {
-      isLoading.value = true
-      const response = await fetch(tiffUrl)
-      const arrayBuffer = await response.arrayBuffer()
-      const tiff = await fromArrayBuffer(arrayBuffer)
-      const image = await tiff.getImage();
-      const raster = await image.readRasters({ interleave: true });
-      const canvas = document.createElement('canvas');
-      const width = image.getWidth();
-      const height = image.getHeight();
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.createImageData(width, height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
+        ctx.drawImage(img, 0, 0);
+        const highlights = [
+          { xy: "129.921265,1095.275635,151.968506,39.370079", color: "#eb949459" },
+          { xy: "855.118103,1792.125977,118.110237,53.543331", color: "#eb949459" },
+          { xy: "73.228348,1929.133911,396.063019,62.204796", color: "#eb949459" },
+        ];
 
-      canvas.width = width;
-      canvas.height = height;
-      // salesDocPreview.value[page].pageHeight = height
+        // 畫框
+        highlights.forEach(({ xy, color }) => {
+          const [x, y, width, height] = xy.split(',').map(Number);
+          // ctx.fillStyle = color;
+          // ctx.fillRect(x, y, width, height);
+        });
 
-      for (let i = 0; i < width * height; i++) {
-        const r16 = raster[i * 4] as any;
-        const g16 = raster[i * 4 + 1] as any;
-        const b16 = raster[i * 4 + 2] as any;
-        const a16 = raster[i * 4 + 3] as any;
 
-        const r = (r16 * 255) / 65535;
-        const g = (g16 * 255) / 65535;
-        const b = (b16 * 255) / 65535;
-        const a = (a16 * 255) / 65535;
 
-        imageData.data[i * 4] = r;
-        imageData.data[i * 4 + 1] = g;
-        imageData.data[i * 4 + 2] = b;
-        imageData.data[i * 4 + 3] = a;
-      }
+        canvas.addEventListener('mousemove', (event) => {
+          const rect = canvas.getBoundingClientRect(); // 取得畫布相對位置
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
 
-      ctx.putImageData(imageData, 0, 0);
-      // renderedCanvas.value = canvas;
-      isLoading.value = false
-      return canvas;
-    } catch (error) {
-      isLoading.value = false
-      console.error('渲染 TIFF 失敗:', error);
+          const mouseX = (event.clientX - rect.left) * scaleX;
+          const mouseY = (event.clientY - rect.top) * scaleY;
 
-      return null;
-    }
+          // console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
+        });
+        resolve(canvas); // ✅ 回傳 canvas
+
+      };
+      img.onerror = (err) => reject(err);
+    });
   }
 
 
@@ -190,7 +176,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   async function switchPage({ index = currentPage.value, type = '' }) {
     isLoading.value = false
     if (type === 'last' && currentPage.value === 0) return;
-    if (type === 'next' && currentPage.value === salesDocPreview.value.length - 1) return;
+    if (type === 'next' && currentPage.value === currentDocs.value.length - 1) return;
 
     // if (type === 'next') {
     //   currentPage.value++;

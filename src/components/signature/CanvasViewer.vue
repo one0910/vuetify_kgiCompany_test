@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, nextTick, defineExpose } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
+import Loading from '@/components/Loading.vue';
 const { documents } = defineProps(['documents']);
 
 const store = useInsureanceStore();
@@ -9,15 +10,16 @@ const isLoading = ref(false);
 
 // 首次掛載時也更新一次畫布
 async function renderAllCanvas() {
+  isLoading.value = true;
   if (!canvasRef.value) return;
 
-  isLoading.value = true;
   canvasRef.value.innerHTML = '';
   for (let i = 0; i < documents.length; i++) {
     const canvas = await store.renderInsureanceDoc(documents[i]);
     if (canvas) {
       canvasRef.value.appendChild(canvas);
       await nextTick();
+
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const domHeight = canvas.offsetHeight;
       documents[i].pageHeight = domHeight;
@@ -44,16 +46,13 @@ defineExpose({
 </script>
 
 <template>
-  <v-sheet class="d-flex justify-center align-center">
-    <v-progress-circular
-      color="grey-darken-1"
-      indeterminate
-      size="40"
-      v-show="isLoading"
-    ></v-progress-circular>
-  </v-sheet>
+  <Loading v-show="isLoading" />
 
-  <div ref="canvasRef" v-show="!store.isLoading" class="canvas-container border-xl"></div>
+  <div
+    ref="canvasRef"
+    class="canvas-container border-xl"
+    :class="isLoading ? 'opacity-0' : 'opacity-1'"
+  ></div>
 </template>
 
 <style lang="scss" scoped>

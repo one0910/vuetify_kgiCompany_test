@@ -17,6 +17,7 @@ function detectBottom(event) {
   if (store.stage !== 'preview') return;
   const { scrollTop, scrollHeight, clientHeight } = event.target;
   const scrollPosition = scrollTop + clientHeight;
+  console.log(`scrollPosition => `, scrollPosition);
 
   let cumulativeHeight = 0;
 
@@ -55,6 +56,11 @@ function nextStep() {
   nextTick(() => {
     canvasViewerRef.value?.renderAllCanvas();
   });
+}
+
+function signatueTest(params) {
+  store.signatureButton[0].signimg = '4123412';
+  store.signatureButton[0].signedStatus = 'signed';
 }
 
 onMounted(async () => {
@@ -101,7 +107,10 @@ watch(
       <v-col cols="11">
         <div class="d-flex bgPrimaryColor justify-space-between align-center">
           <p class="text-grey-darken-3">要保人同意書</p>
-          <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
+          <div class="d-flex">
+            <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
+            <button @click="signatueTest">簽名</button>
+          </div>
         </div>
       </v-col>
     </v-row>
@@ -110,6 +119,7 @@ watch(
       <v-col cols="1" class="pa-0">
         <SwitchSideBarRead v-if="store.stage === 'preview'" />
         <SwitchSideBarSign v-else />
+        <!-- <SwitchSideBarSign /> -->
       </v-col>
 
       <!-- 保書、合約書內容 -->
@@ -122,6 +132,7 @@ watch(
           >
             <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
               <SignaturedNavbar v-if="store.stage !== 'preview'" />
+              <!-- <SignaturedNavbar /> -->
             </v-sheet>
             <div>
               <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />

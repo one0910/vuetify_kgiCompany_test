@@ -1,5 +1,6 @@
 <script setup>
 import { useInsureanceStore } from '@/stores/signature';
+import { computed } from 'vue';
 const store = useInsureanceStore();
 function switchRoleHandler({ type }) {
   store.currentRole = type;
@@ -13,9 +14,22 @@ function switchRoleHandler({ type }) {
       style="background-color: #00000000"
       class="px-2"
     >
-      <v-list-item class="bg-grey-darken-1 rounded-xl py-0" @click="switchRoleHandler(item)">
-        <v-avatar size="25" class="mr-1" style="border: 2px solid #ccc">
-          <v-icon icon="mdi-check" color="grey-lighten-3" size="13"></v-icon>
+      <v-list-item
+        class="rounded-xl py-0"
+        :class="[item.type === store.currentRole ? 'bg-blue-darken-4' : 'bg-grey-darken-1']"
+        @click="switchRoleHandler(item)"
+      >
+        <v-avatar
+          size="25"
+          class="mr-1 border-active"
+          :color="item.allSignedComplete ? 'green-darken-2' : ''"
+          :class="[item.allSignedComplete ? 'border-complete' : '']"
+        >
+          <v-icon
+            :icon="item.allSignedComplete ? 'mdi-check' : ''"
+            color="grey-lighten-3"
+            size="13"
+          ></v-icon>
         </v-avatar>
         {{ item.name }}
       </v-list-item>
@@ -23,4 +37,13 @@ function switchRoleHandler({ type }) {
   </v-sheet>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.border-active {
+  border: 2px solid #ccc;
+  /* background-color: #f00; */
+}
+
+.border-complete {
+  border: 2px solid #388e3c; // Vuetify 的 blue-darken-2
+}
+</style>

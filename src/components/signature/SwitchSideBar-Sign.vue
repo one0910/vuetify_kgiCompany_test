@@ -5,12 +5,17 @@ import { useInsureanceStore } from '@/stores/signature';
 const store = useInsureanceStore();
 const currentPage = computed(() => store.currentPage);
 async function setSignatureButton() {
-  console.log(`store.signatureButton => `, store.signatureButton);
   store.signatureButton.forEach((button) => {
     if (store.currentRole === button.type && !button.signimg) {
       button.signedStatus = 'unsigned';
     }
   });
+}
+
+function signatueTest(index) {
+  store.signatureButton[index].signimg = '4123412';
+  store.signatureButton[index].signedStatus = 'signed';
+  store.originalStatusMap[index].status = 'signed';
 }
 
 onMounted(() => {
@@ -23,14 +28,17 @@ onMounted(() => {
     }
   );
 });
+
 watch(
   () => store.currentRole,
   (role) => {
-    store.signatureButton.forEach((button) => {
+    store.signatureButton.forEach((button, index) => {
       if (button.type === role) {
         button.signedStatus = button.signimg?.trim() ? 'signed' : 'unsigned';
+        store.originalStatusMap[index].status = button.signimg?.trim() ? 'signed' : 'unsigned';
       } else {
         button.signedStatus = button.signimg?.trim() ? 'signed' : 'unselected';
+        store.originalStatusMap[index].status = button.signimg?.trim() ? 'signed' : 'unselected';
       }
     });
   },
@@ -50,7 +58,7 @@ watch(
         <template v-slot>
           <div
             class="d-flex justify-center align-center cursor-pointer"
-            @click="store.switchPage({ index })"
+            @click="store.switchSignButton({ index })"
           >
             <v-avatar
               size="32"
@@ -82,6 +90,7 @@ watch(
               :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
             >
               0{{ index + 1 }}
+              <span @click="signatueTest(index)">簽</span>
             </v-list-item-subtitle>
           </div>
         </template>
@@ -94,15 +103,23 @@ watch(
     height="120"
   >
     <div class="boxshadow"></div>
+    <!-- 往上一個箭頭 -->
     <v-avatar
       color="white"
       size="54"
       class="mb-auto border-md"
-      @click="store.switchPage({ type: 'divide' })"
+      @click="store.switchSignButton({ type: 'last' })"
     >
       <v-icon icon="mdi-arrow-up"></v-icon>
     </v-avatar>
-    <v-avatar color="white" size="54" class="border-md" @click="store.switchPage({ type: 'plus' })">
+
+    <!-- 往下一個箭頭 -->
+    <v-avatar
+      color="white"
+      size="54"
+      class="border-md"
+      @click="store.switchSignButton({ type: 'next' })"
+    >
       <v-icon icon="mdi-arrow-down"></v-icon>
     </v-avatar>
   </v-sheet>

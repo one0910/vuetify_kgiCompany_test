@@ -11,13 +11,13 @@ const store = useInsureanceStore();
 const scrollContainerRef = ref(null);
 const canvasViewerRef = ref();
 const maxHeight = ref(450);
+const tipBar = ref(true);
 
 function detectBottom(event) {
   if (!(event.target instanceof HTMLElement)) return;
   if (store.stage !== 'preview') return;
   const { scrollTop, scrollHeight, clientHeight } = event.target;
   const scrollPosition = scrollTop + clientHeight;
-  console.log(`scrollPosition => `, scrollPosition);
 
   let cumulativeHeight = 0;
 
@@ -53,14 +53,10 @@ function detectBottom(event) {
 
 function nextStep() {
   store.goToNextStage();
+  tipBar.value = true;
   nextTick(() => {
     canvasViewerRef.value?.renderAllCanvas();
   });
-}
-
-function signatueTest(params) {
-  store.signatureButton[0].signimg = '4123412';
-  store.signatureButton[0].signedStatus = 'signed';
 }
 
 onMounted(async () => {
@@ -85,9 +81,11 @@ watch(
     });
   }
 );
+
 watch(
   () => store.insureanceData.length,
   (length) => {
+    console.log(`1 => `, 1);
     if (length > 0) {
       nextTick(() => {
         canvasViewerRef.value?.renderAllCanvas();
@@ -107,10 +105,7 @@ watch(
       <v-col cols="11">
         <div class="d-flex bgPrimaryColor justify-space-between align-center">
           <p class="text-grey-darken-3">要保人同意書</p>
-          <div class="d-flex">
-            <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
-            <button @click="signatueTest">簽名</button>
-          </div>
+          <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
         </div>
       </v-col>
     </v-row>
@@ -165,6 +160,10 @@ watch(
       </v-col>
     </v-row>
   </v-container>
+  <v-snackbar v-model="tipBar" timeout="2000" height="50">
+    <p class="tipBarStyle" v-if="store.stage === 'preview'">文件閱讀</p>
+    <p class="tipBarStyle" v-else-if="store.stage === 'sign1'">文件簽名</p>
+  </v-snackbar>
 </template>
 
 <style lang="scss" scoped>
@@ -178,5 +177,11 @@ watch(
 
 .step--editing {
   border: 2px solid rgba(var(--v-theme-secondary), 1);
+}
+
+.tipBarStyle {
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 1px;
 }
 </style>

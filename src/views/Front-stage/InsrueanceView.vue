@@ -1,105 +1,13 @@
-<template>
-  <v-stepper v-model="step" vertical>
-    <v-stepper-item :value="1">
-      <template v-slot:step="{ props }">
-        <v-btn
-          :color="props.isActive ? 'primary' : ''"
-          :class="{ 'white--text': props.isActive }"
-          rounded
-          x-small
-        >
-          {{ props.index }}
-        </v-btn>
-      </template>
-      <div>要保人同意投保</div>
-    </v-stepper-item>
-    <v-stepper-item :value="2">
-      <template v-slot:step="{ props }">
-        <v-btn
-          :color="props.isActive ? 'primary' : ''"
-          :class="{ 'white--text': props.isActive }"
-          rounded
-          x-small
-        >
-          {{ props.index }}
-        </v-btn>
-      </template>
-
-      <div>被保險人</div>
-    </v-stepper-item>
-    <v-stepper-item :value="3">
-      <template v-slot:step="{ props }">
-        <v-btn
-          :color="props.isActive ? 'primary' : ''"
-          :class="{ 'white--text': props.isActive }"
-          rounded
-          x-small
-        >
-          {{ props.index }}
-        </v-btn>
-      </template>
-      <div>業務員一</div>
-    </v-stepper-item>
-    <v-stepper-item :value="4">
-      <template v-slot:step="{ props }">
-        <v-btn
-          :color="props.isActive ? 'primary' : ''"
-          :class="{ 'white--text': props.isActive }"
-          rounded
-          x-small
-        >
-          {{ props.index }}
-        </v-btn>
-      </template>
-      <div>步驟四</div>
-    </v-stepper-item>
-    <v-stepper-item :value="5">
-      <template v-slot:step="{ props }">
-        <v-btn
-          :color="props.isActive ? 'primary' : ''"
-          :class="{ 'white--text': props.isActive }"
-          rounded
-          x-small
-        >
-          {{ props.index }}
-        </v-btn>
-      </template>
-      <div>步驟五</div>
-    </v-stepper-item>
-  </v-stepper>
-  <div class="d-flex flex-column mt-2">
-    <v-btn
-      v-for="n in totalSteps"
-      :key="n"
-      rounded
-      :class="[
-        'mb-2',
-        'step-button',
-        { 'step-button--active': step === n }
-      ]"
-      @click="step = n"
-      x-small
-    >
-      {{ n < 10 ? '0' + n : n }}
-    </v-btn>
-    <v-btn
-      icon="mdi-arrow-up"
-      @click="step = Math.max(1, step - 1)"
-    ></v-btn>
-    <v-btn
-      icon="mdi-arrow-down"
-      @click="step = Math.min(5, step + 1)"
-    ></v-btn>
-  </div>
-</template>
-
 <script setup>
 import { ref } from 'vue';
-const step = ref(1);
 
-const totalSteps = ref(5);
+const snackbar = ref(true);
 </script>
-
+<template>
+  <v-snackbar v-model="snackbar" timeout="-1" height="50">
+    <p class="text-center">我是snackbar</p>
+  </v-snackbar>
+</template>
 <style scoped>
 .step-button {
   border: 1px solid #ccc;

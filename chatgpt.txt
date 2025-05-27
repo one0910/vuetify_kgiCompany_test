@@ -1,154 +1,23 @@
-你的程式可以work沒有問題,我的store.signatureButton裡的signedStatus也有變更
-但我下面的CSS沒有跟著變,如圖所示, 我按下Role0時的按鈕時, 我的左邊的sidebar的按鈕01應是bg-transparent , 然後按鈕02、04應該是bg-red,按鈕03則為bg-transparent
-這有可能是什麼問題?
+我的概念再加上你的程式碼, 基本已經可以如預期的正常上下鈕切換, 並回復到前一按鈕狀態,現在你在幫我一個忙,
+我希望在originalStatusMap的地方再加上一個狀態,它除了記錄前一個按鈕的狀態之外,再幫我加上該按鈕所屬的type
+原來的程式碼是長這樣originalStatusMap:Object
+0:"unselected"
+1:"unsigned"
+2:"unselected"
+3:"unsigned"
 
-<script setup>
-import { computed, onMounted, watch } from 'vue';
-import { useInsureanceStore } from '@/stores/signature';
-
-const store = useInsureanceStore();
-const currentPage = computed(() => store.currentPage);
-async function setSignatureButton() {
-  store.signatureButton.forEach((button) => {
-    console.log(`store.currentRole => `, store.currentRole);
-    if (store.currentRole === button.type && !button.signimg) {
-      button.signedStatus = 'unsigned';
-    }
-  });
-}
-
-onMounted(() => {
-  watch(
-    () => store.signatureButton,
-    (val) => {
-      if (val.length > 0) {
-        setSignatureButton();
-      }
-    }
-  );
-});
-watch(
-  () => store.currentRole,
-  (role) => {
-    store.signatureButton.forEach((button, index) => {
-      console.log(`button => `, button);
-      if (button.type === role) {
-        button.signedStatus = button.signimg?.trim() ? 'signed' : 'unsigned';
-      } else {
-        button.signedStatus = button.signimg?.trim() ? 'signed' : 'unselected';
-      }
-    });
+我希望長成{
+  0:{
+    status:unselected,
+    type:0
   },
-  { immediate: true }
-);
-</script>
-
-<template>
-  <v-sheet height="350" class="bgPrimaryColor">
-    <v-list class="bgPrimaryColor">
-      <v-list-item v-for="(item, index) in store.signatureButton" :key="index" tag="div">
-        <template v-slot>
-          <div
-            class="d-flex justify-center align-center cursor-pointer"
-            @click="store.switchPage({ index })"
-          >
-            <v-avatar
-              size="32"
-              class="pa-3"
-              :class="[
-                index === currentPage ? 'border-active' : 'border-inactive',
-                item.signedStatus === 'signed'
-                  ? 'bg-green'
-                  : item.signedStatus === 'unsigned'
-                    ? 'bg-red'
-                    : 'bg-transparent'
-              ]"
-            >
-              <v-icon color="white" size="15" :icon="item.signimg ? 'mdi-check' : ''"></v-icon>
-            </v-avatar>
-
-            <v-list-item-subtitle
-              class="pl-3 text-subtitle-1"
-              :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
-            >
-              0{{ index + 1 }}
-            </v-list-item-subtitle>
-          </div>
-        </template>
-      </v-list-item>
-    </v-list>
-  </v-sheet>
-
-  <v-sheet
-    class="d-flex flex-column mt-3 align-center bgPrimaryColor position-relative"
-    height="120"
-  >
-    <div class="boxshadow"></div>
-    <v-avatar
-      color="white"
-      size="54"
-      class="mb-auto border-md"
-      @click="store.switchPage({ type: 'divide' })"
-    >
-      <v-icon icon="mdi-arrow-up"></v-icon>
-    </v-avatar>
-    <v-avatar color="white" size="54" class="border-md" @click="store.switchPage({ type: 'plus' })">
-      <v-icon icon="mdi-arrow-down"></v-icon>
-    </v-avatar>
-  </v-sheet>
-</template>
-
-<style lang="scss" scoped>
-.bgPrimaryColor {
-  background-color: #f2f6ff;
+  1:{
+    status:unsigned,
+    type:9
+  },
 }
+所以你再幫我修改一下
 
-.step--completed {
-  border: 2px solid rgba(var(--v-theme-primary), 1);
-}
-
-.step--editing {
-  border: 2px solid rgba(var(--v-theme-secondary), 1);
-}
-
-.border-active {
-  border: 3px solid #1e88e5; // Vuetify 的 blue-darken-2
-}
-.border-inactive {
-  border: 2px solid #ccc;
-  /* background-color: #f00; */
-}
-.border-none {
-  border: none;
-}
-
-.text-grey {
-  color: #aaa; // 或 Vuetify 色階 grey-darken-1
-}
-
-.boxshadow {
-  position: absolute;
-  bottom: 100%;
-  /* background: #f00; */
-  height: 35px;
-  width: 100%;
-  &::after {
-    content: '';
-    display: inline-block;
-    color: #000;
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 10%;
-    z-index: 3;
-    box-shadow: inset 3px 26px 25px 2px #f2f6ff;
-  }
-  /* display: none; */
-}
-</style>
-
-下面是我store的資料 , 你參考看看
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
@@ -163,11 +32,14 @@ export const useInsureanceStore = defineStore('insureance', () => {
   type Stage = 'preview' | 'sign1' | 'sign2';
   type SignStatus = 'unselected' | 'unsigned' | 'signed';
   const stage = ref<Stage>('preview');
-  const currentRole = ref(9)
+  const currentRole = ref(0)
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
+  const signatureButton = ref<any[]>([]);
+  const originalStatusMap = ref<Record<number, SignStatus>>({});
+
 
   const currentDocs = computed(() => insureanceData.value);
 
@@ -194,41 +66,48 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
     // 將 sign 根據 form 分組
     const groupedSignatures = sign.reduce((acc: Record<string, any[]>, sig) => {
-      if (!acc[sig.form]) acc[sig.form] = [];
+      if (!acc[sig.form]) {
+        acc[sig.form] = [];
+      }
       acc[sig.form].push(sig);
       return acc;
     }, {});
 
     // 將 form 結合對應的 signature
-    const transformedData = form.map((item: any, index: number) => ({
-      ...item,
-      pageIndex: index,
-      signature: groupedSignatures[item.form] || [],
-      pageHeight: 0,
-    }));
-
-    console.log(`transformedData => `, transformedData)
+    const transformedData = form.map((item: any, index: number) => {
+      return {
+        ...item,
+        // type:[].push(groupedSignatures) || []
+        pageIndex: index,
+        signature: groupedSignatures[item.form] || [],
+        pageHeight: 0,
+      }
+    });
     insureanceData.value = transformedData;
+    transformToSignatureButtons(transformedData);
   }
 
-  //簽名頁sideBar的按鈕
-  const signatureButton = computed(() => {
-    const result = []
-    for (const doc of insureanceData.value) {
+  //再將資料重整至signatureButton
+  function transformToSignatureButtons(docs: any[]) {
+    signatureButton.value = []; // 清空之前的資料
+    originalStatusMap.value = {};
+    for (const doc of docs) {
       for (const sig of doc.signature || []) {
-        const status: SignStatus = (sig.signimg?.trim()) ? 'signed' : 'unselected';
-        result.push({
+        const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
+        signatureButton.value.push({
           ...sig,
           type: parseInt(sig.type),
           pageIndex: doc.pageIndex,
           form: doc.form,
           tiffUrl: doc.tiffUrl,
-          signedStatus: status,
-        })
+          signedStatus: status
+        });
+        originalStatusMap.value[signatureButton.value.length - 1] = status
       }
     }
-    return result
-  })
+  }
+
+
 
   //角色列按鈕
   const signatureRoleType = computed(() => {
@@ -247,6 +126,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
         })
       }
     }
+    console.log(`result => `, result)
+    currentRole.value = result[0]?.type
     return result
   })
 
@@ -271,60 +152,56 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
-    const tiffUrl = doc.tiffUrl;
+    const base64 = doc.tiffUrl;
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-    try {
-      isLoading.value = true
-      const response = await fetch(tiffUrl)
-      const arrayBuffer = await response.arrayBuffer()
-      const tiff = await fromArrayBuffer(arrayBuffer)
-      const image = await tiff.getImage();
-      const raster = await image.readRasters({ interleave: true });
-      const canvas = document.createElement('canvas');
-      const width = image.getWidth();
-      const height = image.getHeight();
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.createImageData(width, height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
+        ctx.drawImage(img, 0, 0);
+        const highlights = [
+          { xy: "129.921265,1095.275635,151.968506,39.370079", color: "#eb949459" },
+          { xy: "855.118103,1792.125977,118.110237,53.543331", color: "#eb949459" },
+          { xy: "73.228348,1929.133911,396.063019,62.204796", color: "#eb949459" },
+        ];
 
-      canvas.width = width;
-      canvas.height = height;
-      // salesDocPreview.value[page].pageHeight = height
+        // 畫框
+        highlights.forEach(({ xy, color }) => {
+          const [x, y, width, height] = xy.split(',').map(Number);
+          // ctx.fillStyle = color;
+          // ctx.fillRect(x, y, width, height);
+        });
 
-      for (let i = 0; i < width * height; i++) {
-        const r16 = raster[i * 4] as any;
-        const g16 = raster[i * 4 + 1] as any;
-        const b16 = raster[i * 4 + 2] as any;
-        const a16 = raster[i * 4 + 3] as any;
 
-        const r = (r16 * 255) / 65535;
-        const g = (g16 * 255) / 65535;
-        const b = (b16 * 255) / 65535;
-        const a = (a16 * 255) / 65535;
 
-        imageData.data[i * 4] = r;
-        imageData.data[i * 4 + 1] = g;
-        imageData.data[i * 4 + 2] = b;
-        imageData.data[i * 4 + 3] = a;
-      }
+        canvas.addEventListener('mousemove', (event) => {
+          const rect = canvas.getBoundingClientRect(); // 取得畫布相對位置
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
 
-      ctx.putImageData(imageData, 0, 0);
-      // renderedCanvas.value = canvas;
-      isLoading.value = false
-      return canvas;
-    } catch (error) {
-      isLoading.value = false
-      console.error('渲染 TIFF 失敗:', error);
+          const mouseX = (event.clientX - rect.left) * scaleX;
+          const mouseY = (event.clientY - rect.top) * scaleY;
 
-      return null;
-    }
+          // console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
+        });
+        resolve(canvas); // ✅ 回傳 canvas
+
+      };
+      img.onerror = (err) => reject(err);
+    });
   }
 
 
   //換頁籤切換功能
   async function switchPage({ index = currentPage.value, type = '' }) {
     isLoading.value = false
-    if (type === 'last' && currentPage.value === 0) return;
-    if (type === 'next' && currentPage.value === salesDocPreview.value.length - 1) return;
+    // if (type === 'last' && currentPage.value === 0) return;
+    // if (type === 'next' && currentPage.value === currentDocs.value.length - 1) return;
 
     // if (type === 'next') {
     //   currentPage.value++;
@@ -339,6 +216,42 @@ export const useInsureanceStore = defineStore('insureance', () => {
     //   currentPage.value = index;
     //   scrollToPage(currentPage.value);
     // }
+  }
+
+  //上、下按鈕切換
+  function switchSignButton({ index = currentPage.value, type = '' }) {
+    const buttons = signatureButton.value;
+    const total = buttons.length;
+
+    if (type === 'next') {
+      let nextIndex = currentPage.value + 1;
+      while (nextIndex < total && buttons[nextIndex].signimg?.trim()) {
+        nextIndex++;
+      }
+      if (nextIndex < total) {
+        // ✅ 恢復當前的原始狀態
+        buttons[currentPage.value].signedStatus = originalStatusMap.value[currentPage.value];
+        currentPage.value = nextIndex;
+        if (buttons[nextIndex].signedStatus === 'unselected') {
+          buttons[nextIndex].signedStatus = 'unsigned';
+        }
+      }
+    } else if (type === 'last') {
+      let prevIndex = currentPage.value - 1;
+      while (prevIndex >= 0 && buttons[prevIndex].signimg?.trim()) {
+        prevIndex--;
+      }
+      if (prevIndex >= 0) {
+        // ✅ 恢復當前的原始狀態
+        buttons[currentPage.value].signedStatus = originalStatusMap.value[currentPage.value];
+        currentPage.value = prevIndex;
+        if (buttons[prevIndex].signedStatus === 'unselected') {
+          buttons[prevIndex].signedStatus = 'unsigned';
+        }
+      }
+    } else {
+      currentPage.value = index;
+    }
   }
 
   //滑行滾輪移動到該頁
@@ -370,7 +283,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
     insureanceData,
     currentPage,
     currentRole,
+    originalStatusMap,
     switchPage,
+    switchSignButton,
     renderInsureanceDoc,
     renderedCanvas,
     isLoading,
@@ -385,4 +300,3 @@ export const useInsureanceStore = defineStore('insureance', () => {
     signatureRoleType
   };
 });
-

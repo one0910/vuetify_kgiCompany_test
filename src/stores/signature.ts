@@ -18,18 +18,21 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
   const signatureButton = ref<any[]>([]);
-
   const currentDocs = computed(() => insureanceData.value);
+  const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
+  const allCurrentRoleSigned = computed(() => {
+    return signatureButton.value
+      .filter(item => item.type === currentRole.value)
+      .every(item => item.signimg?.trim());
+  });
 
   //是否啟用下一步的按鈕
   const enableNextButton = computed(() => {
     if (stage.value === 'preview') {
       return insureanceData.value.every(doc => doc.readComplete);
     }
-    if (stage.value === 'sign1' || stage.value === 'sign2') {
-      return insureanceData.value.every(doc =>
-        doc.signature.every((sig: { signImg: string; }) => sig.signImg && sig.signImg.trim() !== '')
-      );
+    if (stage.value === 'sign1') {
+      return signatureButton.value.every(doc => doc.signimg)
     }
     return false;
   });
@@ -50,7 +53,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
       acc[sig.form].push(sig);
       return acc;
     }, {});
-    console.log(`groupedSignatures => `, groupedSignatures)
 
     // 將 form 結合對應的 signature
     const transformedData = form.map((item: any, index: number) => {
@@ -69,21 +71,27 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //再將資料重整至signatureButton
   function transformToSignatureButtons(docs: any[]) {
     signatureButton.value = []; // 清空之前的資料
+    originalStatusMap.value = {};
     for (const doc of docs) {
       for (const sig of doc.signature || []) {
         const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
+        const type = parseInt(sig.type);
+        const index = signatureButton.value.length;
         signatureButton.value.push({
           ...sig,
-          type: parseInt(sig.type),
+          type,
           pageIndex: doc.pageIndex,
           form: doc.form,
           tiffUrl: doc.tiffUrl,
           signedStatus: status
         });
+        originalStatusMap.value[index] = {
+          status,
+          type
+        };
       }
     }
   }
-
 
   //角色列按鈕
   const signatureRoleType = computed(() => {
@@ -102,6 +110,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         })
       }
     }
+    console.log(`result => `, result)
     currentRole.value = result[0]?.type
     return result
   })
@@ -175,15 +184,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //換頁籤切換功能
   async function switchPage({ index = currentPage.value, type = '' }) {
     isLoading.value = false
-    if (type === 'last' && currentPage.value === 0) return;
-    if (type === 'next' && currentPage.value === currentDocs.value.length - 1) return;
-
-    // if (type === 'next') {
-    //   currentPage.value++;
-    // } else if (type === 'last') {
-    //   currentPage.value--;
-    // } else if (index !== currentPage.value) {
-    // }
     currentPage.value = index;
     scrollToPage(currentPage.value);
     //需已閱讀才能跳頁
@@ -191,6 +191,44 @@ export const useInsureanceStore = defineStore('insureance', () => {
     //   currentPage.value = index;
     //   scrollToPage(currentPage.value);
     // }
+  }
+
+  //上、下按鈕切換
+  function switchSignButton({ index = currentPage.value, type = '' }) {
+    const buttons = signatureButton.value;
+    const total = buttons.length;
+
+    if (type === 'next') {
+      let nextIndex = currentPage.value + 1;
+      while (nextIndex < total && buttons[nextIndex].signimg?.trim()) {
+        nextIndex++;
+      }
+      if (nextIndex < total) {
+        // ✅ 恢復當前的原始狀態
+        buttons[currentPage.value].signedStatus = originalStatusMap.value[currentPage.value]?.status;
+        currentPage.value = nextIndex;
+        if (buttons[nextIndex].signedStatus === 'unselected') {
+          buttons[nextIndex].signedStatus = 'unsigned';
+        }
+        // currentRole.value = originalStatusMap.value[currentPage.value]?.type
+      }
+    } else if (type === 'last') {
+      let prevIndex = currentPage.value - 1;
+      while (prevIndex >= 0 && buttons[prevIndex].signimg?.trim()) {
+        prevIndex--;
+      }
+      if (prevIndex >= 0) {
+        // ✅ 恢復當前的原始狀態p
+        buttons[currentPage.value].signedStatus = originalStatusMap.value[currentPage.value]?.status;
+        currentPage.value = prevIndex;
+        if (buttons[prevIndex].signedStatus === 'unselected') {
+          buttons[prevIndex].signedStatus = 'unsigned';
+        }
+        // currentRole.value = originalStatusMap.value[currentPage.value]?.type
+      }
+    } else {
+      currentPage.value = index;
+    }
   }
 
   //滑行滾輪移動到該頁
@@ -222,7 +260,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
     insureanceData,
     currentPage,
     currentRole,
+    originalStatusMap,
     switchPage,
+    switchSignButton,
     renderInsureanceDoc,
     renderedCanvas,
     isLoading,
@@ -234,6 +274,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     currentDocs,
     fetchInsureanceDocs,
     signatureButton,
-    signatureRoleType
+    signatureRoleType,
+    allCurrentRoleSigned
   };
 });

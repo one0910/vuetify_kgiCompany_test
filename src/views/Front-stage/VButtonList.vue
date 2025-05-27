@@ -12,6 +12,7 @@ const scrollContainerRef = ref(null);
 const canvasViewerRef = ref();
 const maxHeight = ref(450);
 const tipBar = ref(true);
+const showFakeSign = ref(false);
 
 function detectBottom(event) {
   if (!(event.target instanceof HTMLElement)) return;
@@ -85,7 +86,6 @@ watch(
 watch(
   () => store.insureanceData.length,
   (length) => {
-    console.log(`1 => `, 1);
     if (length > 0) {
       nextTick(() => {
         canvasViewerRef.value?.renderAllCanvas();
@@ -105,16 +105,19 @@ watch(
       <v-col cols="11">
         <div class="d-flex bgPrimaryColor justify-space-between align-center">
           <p class="text-grey-darken-3">要保人同意書</p>
-          <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
+          <div class="d-flex">
+            <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
+            <button @click="showFakeSign = !showFakeSign">顯示簽名</button>
+          </div>
         </div>
       </v-col>
     </v-row>
     <v-row>
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
-        <SwitchSideBarRead v-if="store.stage === 'preview'" />
-        <SwitchSideBarSign v-else />
-        <!-- <SwitchSideBarSign /> -->
+        <!-- <SwitchSideBarRead v-if="store.stage === 'preview'" /> -->
+        <!-- <SwitchSideBarSign v-else /> -->
+        <SwitchSideBarSign :showFakeSign="showFakeSign" />
       </v-col>
 
       <!-- 保書、合約書內容 -->
@@ -126,8 +129,8 @@ watch(
             :max-height="maxHeight"
           >
             <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
-              <SignaturedNavbar v-if="store.stage !== 'preview'" />
-              <!-- <SignaturedNavbar /> -->
+              <!-- <SignaturedNavbar v-if="store.stage !== 'preview'" /> -->
+              <SignaturedNavbar />
             </v-sheet>
             <div>
               <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />
@@ -160,10 +163,10 @@ watch(
       </v-col>
     </v-row>
   </v-container>
-  <v-snackbar v-model="tipBar" timeout="2000" height="50">
+  <!-- <v-snackbar v-model="tipBar" timeout="2000" height="50">
     <p class="tipBarStyle" v-if="store.stage === 'preview'">文件閱讀</p>
     <p class="tipBarStyle" v-else-if="store.stage === 'sign1'">文件簽名</p>
-  </v-snackbar>
+  </v-snackbar> -->
 </template>
 
 <style lang="scss" scoped>

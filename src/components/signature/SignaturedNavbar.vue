@@ -1,22 +1,29 @@
 <script setup>
+import { storeToRefs } from 'pinia';
 import { useInsureanceStore } from '@/stores/signature';
 import { computed } from 'vue';
 const store = useInsureanceStore();
+const { signatureRoleType, currentRole, clickTabMapToType } = storeToRefs(store);
+
 function switchRoleHandler({ type }) {
+  console.log(`type => `, type);
   store.currentRole = type;
 }
 </script>
 <template>
   <v-sheet class="d-flex py-1" style="background-color: rgba(0, 0, 0, 0.71)">
     <v-list
-      v-for="(item, index) in store.signatureRoleType"
+      v-for="(item, index) in signatureRoleType"
       :key="index"
       style="background-color: #00000000"
       class="px-2"
     >
       <v-list-item
         class="rounded-xl py-0"
-        :class="[item.type === store.currentRole ? 'bg-blue-darken-4' : 'bg-grey-darken-1']"
+        :class="[
+          item.type === currentRole ? 'bg-blue-darken-4' : 'bg-grey-darken-1',
+          item.type === clickTabMapToType ? 'border-clickTab' : ''
+        ]"
         @click="switchRoleHandler(item)"
       >
         <v-avatar
@@ -45,5 +52,9 @@ function switchRoleHandler({ type }) {
 
 .border-complete {
   border: 2px solid #388e3c; // Vuetify 的 blue-darken-2
+}
+
+.border-clickTab {
+  border: 2px solid #1d81e5;
 }
 </style>

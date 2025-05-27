@@ -33,13 +33,6 @@ onMounted(async () => {
   await renderAllCanvas();
 });
 
-// watch(
-//   () => store.stage,
-//   async () => {
-//     await nextTick(); // 確保 DOM 已更新
-//     await renderAllCanvas();
-//   }
-// );
 defineExpose({
   renderAllCanvas
 });

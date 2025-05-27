@@ -25,6 +25,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
       .filter(item => item.type === currentRole.value)
       .every(item => item.signimg?.trim());
   });
+  const clickTabMapToType = computed(() => {
+    return signatureButton.value[currentPage.value]?.type ?? null;
+  });
+
 
   //是否啟用下一步的按鈕
   const enableNextButton = computed(() => {
@@ -91,6 +95,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
         };
       }
     }
+    setFirstPageCurrentRole()
+  }
+
+  function setFirstPageCurrentRole() {
+    const first = signatureButton.value[0];
+    currentRole.value = first ? first.type : 0;
   }
 
   //角色列按鈕
@@ -110,8 +120,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         })
       }
     }
-    console.log(`result => `, result)
-    currentRole.value = result[0]?.type
+    // 
     return result
   })
 
@@ -210,6 +219,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (buttons[nextIndex].signedStatus === 'unselected') {
           buttons[nextIndex].signedStatus = 'unsigned';
         }
+
         // currentRole.value = originalStatusMap.value[currentPage.value]?.type
       }
     } else if (type === 'last') {
@@ -275,6 +285,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     fetchInsureanceDocs,
     signatureButton,
     signatureRoleType,
-    allCurrentRoleSigned
+    allCurrentRoleSigned,
+    clickTabMapToType
   };
 });

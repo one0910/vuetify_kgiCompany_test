@@ -1,9 +1,12 @@
 <script setup>
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, toRefs, watch } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
 
 const store = useInsureanceStore();
 const currentPage = computed(() => store.currentPage);
+const props = defineProps(['showFakeSign']);
+const { showFakeSign } = toRefs(props);
+
 async function setSignatureButton() {
   store.signatureButton.forEach((button) => {
     if (store.currentRole === button.type && !button.signimg) {
@@ -90,7 +93,7 @@ watch(
               :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
             >
               0{{ index + 1 }}
-              <span @click="signatueTest(index)">簽</span>
+              <span @click="signatueTest(index)" v-if="showFakeSign">簽</span>
             </v-list-item-subtitle>
           </div>
         </template>

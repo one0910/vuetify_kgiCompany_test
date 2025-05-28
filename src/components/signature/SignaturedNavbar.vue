@@ -5,9 +5,9 @@ import { computed } from 'vue';
 const store = useInsureanceStore();
 const { signatureRoleType, currentRole, clickTabMapToType } = storeToRefs(store);
 
-function switchRoleHandler({ type }) {
-  console.log(`type => `, type);
+function switchRoleHandler({ type, buttonIndex }) {
   store.currentRole = type;
+  store.skipToSignPosition(buttonIndex[0]);
 }
 </script>
 <template>
@@ -24,7 +24,7 @@ function switchRoleHandler({ type }) {
           item.type === currentRole ? 'bg-blue-darken-4' : 'bg-grey-darken-1',
           item.type === clickTabMapToType ? 'border-clickTab' : ''
         ]"
-        @click="switchRoleHandler(item)"
+        @click="switchRoleHandler(item, index)"
       >
         <v-avatar
           size="25"

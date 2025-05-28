@@ -1,13 +1,14 @@
 <script setup>
 import { onMounted, ref, watch, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import { useInsureanceStore } from '@/stores/signature';
 import SwitchSideBarRead from '@/components/signature/SwitchSideBar-Read.vue';
 import SwitchSideBarSign from '@/components/signature/SwitchSideBar-Sign.vue';
 import SignaturedNavbar from '@/components/signature/SignaturedNavbar.vue';
-
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
 
 const store = useInsureanceStore();
+const router = useRouter();
 const scrollContainerRef = ref(null);
 const canvasViewerRef = ref();
 const maxHeight = ref(450);
@@ -53,11 +54,25 @@ function detectBottom(event) {
 }
 
 function nextStep() {
-  store.goToNextStage();
+  goToNextStage();
   tipBar.value = true;
   nextTick(() => {
     canvasViewerRef.value?.renderAllCanvas();
   });
+}
+
+function goToNextStage() {
+  switch (store.stage) {
+    case 'preview':
+      store.stage = 'sign1';
+      break;
+    case 'sign1':
+      store.currentPage = 0;
+      router.push('/vlist');
+      break;
+    default:
+      console.log('❗ 未知的階段:', store.stage);
+  }
 }
 
 onMounted(async () => {
@@ -115,9 +130,9 @@ watch(
     <v-row>
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
-        <!-- <SwitchSideBarRead v-if="store.stage === 'preview'" /> -->
-        <!-- <SwitchSideBarSign v-else /> -->
-        <SwitchSideBarSign :showFakeSign="showFakeSign" />
+        <SwitchSideBarRead v-if="store.stage === 'preview'" />
+        <SwitchSideBarSign :showFakeSign="showFakeSign" v-else />
+        <!-- <SwitchSideBarSign :showFakeSign="showFakeSign" /> -->
       </v-col>
 
       <!-- 保書、合約書內容 -->
@@ -129,8 +144,8 @@ watch(
             :max-height="maxHeight"
           >
             <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
-              <!-- <SignaturedNavbar v-if="store.stage !== 'preview'" /> -->
-              <SignaturedNavbar />
+              <SignaturedNavbar v-if="store.stage !== 'preview'" />
+              <!-- <SignaturedNavbar /> -->
             </v-sheet>
             <div>
               <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />
@@ -163,10 +178,10 @@ watch(
       </v-col>
     </v-row>
   </v-container>
-  <!-- <v-snackbar v-model="tipBar" timeout="2000" height="50">
+  <v-snackbar v-model="tipBar" timeout="2000" height="50">
     <p class="tipBarStyle" v-if="store.stage === 'preview'">文件閱讀</p>
     <p class="tipBarStyle" v-else-if="store.stage === 'sign1'">文件簽名</p>
-  </v-snackbar> -->
+  </v-snackbar>
 </template>
 
 <style lang="scss" scoped>

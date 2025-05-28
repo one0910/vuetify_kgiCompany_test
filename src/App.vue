@@ -65,9 +65,10 @@ function changeTheme(params) {
       <v-btn to="/login" variant="outlined" size="small" text="LOGIN"> </v-btn>
     </v-toolbar>
     <v-main class="bg-customBgColor">
-      <v-slide-x-transition>
+      <RouterView />
+      <!-- <v-slide-x-transition>
         <RouterView />
-      </v-slide-x-transition>
+      </v-slide-x-transition> -->
     </v-main>
   </v-app>
 </template>

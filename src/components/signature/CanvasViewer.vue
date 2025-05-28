@@ -15,7 +15,7 @@ async function renderAllCanvas() {
 
   canvasRef.value.innerHTML = '';
   for (let i = 0; i < documents.length; i++) {
-    const canvas = await store.renderInsureanceDoc(documents[i]);
+    const canvas = await store.renderInsureanceDoc(documents[i], i);
     if (canvas) {
       canvasRef.value.appendChild(canvas);
       await nextTick();
@@ -23,6 +23,12 @@ async function renderAllCanvas() {
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const domHeight = canvas.offsetHeight;
       documents[i].pageHeight = domHeight;
+
+      store.signatureButton.forEach((sig) => {
+        if (sig.pageIndex === i) {
+          sig.pageHeight = domHeight;
+        }
+      });
       // console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
     }
   }

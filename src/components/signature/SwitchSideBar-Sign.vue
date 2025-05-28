@@ -93,8 +93,8 @@ watch(
               :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
             >
               0{{ index + 1 }}
-              <span @click="signatueTest(index)" v-if="showFakeSign">簽</span>
             </v-list-item-subtitle>
+            <span class="ml-2" @click="signatueTest(index)" v-if="showFakeSign">簽</span>
           </div>
         </template>
       </v-list-item>

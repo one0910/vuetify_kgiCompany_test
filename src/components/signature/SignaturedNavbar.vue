@@ -1,17 +1,47 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useInsureanceStore } from '@/stores/signature';
-import { computed } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 const store = useInsureanceStore();
 const { signatureRoleType, currentRole, clickTabMapToType } = storeToRefs(store);
+const navbarRef = ref(null);
 
 function switchRoleHandler({ type, buttonIndex }) {
   store.currentRole = type;
-  store.skipToSignPosition(buttonIndex[0]);
+  store.skipToSignPosition(buttonIndex[0], 'role');
 }
+
+// onMounted(async () => {
+//   await nextTick();
+//   store.skipToSignPosition(0, 'button');
+// });
+
+watch(
+  () => store.signatureRoleType.length,
+  (length) => {
+    if (length > 0) {
+      nextTick(() => {
+        const el = navbarRef.value?.$el || navbarRef.value;
+        // if (!(el instanceof HTMLElement)) return;
+        if (el) {
+          store.navbarHeight = el.offsetHeight;
+        }
+      });
+    }
+  }
+);
+watch(
+  () => store.stage,
+  async () => {
+    await nextTick();
+    setTimeout(() => {
+      store.skipToSignPosition(0, 'button');
+    }, 0);
+  }
+);
 </script>
 <template>
-  <v-sheet class="d-flex py-1" style="background-color: rgba(0, 0, 0, 0.71)">
+  <v-sheet class="d-flex py-1" style="background-color: rgba(0, 0, 0, 0.71)" ref="navbarRef">
     <v-list
       v-for="(item, index) in signatureRoleType"
       :key="index"

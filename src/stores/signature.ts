@@ -19,6 +19,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const signatureButton = ref<any[]>([]);
   const currentDocs = computed(() => insureanceData.value);
   const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
+  const navbarHeight = ref<number>(0)
   const allCurrentRoleSigned = computed(() => {
     return signatureButton.value
       .filter(item => item.type === currentRole.value)
@@ -163,7 +164,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
 
-  async function renderInsureanceDoc(doc: any, index): Promise<HTMLCanvasElement | null> {
+  async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.tiffUrl;
 
     return new Promise((resolve, reject) => {
@@ -178,6 +179,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
         ctx.drawImage(img, 0, 0);
 
+
         if (stage.value !== 'preview') {
           const highlights = (doc.signature || []).map(sig => ({
             xy: sig.xy,
@@ -190,8 +192,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width, height);
           });
-
         }
+
+
 
         canvas.addEventListener('mousemove', (event) => {
           const rect = canvas.getBoundingClientRect(); // 取得畫布相對位置
@@ -263,7 +266,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (buttons[nextIndex].signedStatus === 'unselected') {
           buttons[nextIndex].signedStatus = 'unsigned';
         }
-        skipToSignPosition(nextIndex)
+        skipToSignPosition(nextIndex, 'button')
         // currentRole.value = originalStatusMap.value[currentPage.value]?.type
       }
     } else if (type === 'last') {
@@ -278,32 +281,47 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (buttons[prevIndex].signedStatus === 'unselected') {
           buttons[prevIndex].signedStatus = 'unsigned';
         }
-        skipToSignPosition(prevIndex)
+        skipToSignPosition(prevIndex, 'button')
 
         // currentRole.value = originalStatusMap.value[currentPage.value]?.type
       }
     } else {
       currentPage.value = index;
-      skipToSignPosition(index)
+      skipToSignPosition(index, 'button')
     }
   }
 
   //跳到簽名的位置
-  function skipToSignPosition(buttonIndex: number = 0) {
+  function skipToSignPosition(buttonIndex: number = 0, type: string) {
+    console.log(`buttonIndex => `, buttonIndex)
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value
     if (!(el instanceof HTMLElement)) return;
+    let targetTop = 0
+    const signPosisionXY = signatureButton.value[buttonIndex].xy
+    const [x, y, width, height] = signPosisionXY.split(',').map(Number);
+
+    const documentHeight = signatureButton.value[buttonIndex].documentHeight
     const pageIndex = signatureButton.value[buttonIndex].pageIndex
     const pageHeight = signatureButton.value[buttonIndex].pageHeight
-    let targetTop = pageIndex * pageHeight;
+    if (type === 'button') {
+      targetTop = (pageHeight * (pageIndex + 1) / documentHeight) * y - navbarHeight.value
+      console.log(`targetTop => `, targetTop)
+      console.log(`type => `, type)
+    } else if (type === 'role') {
+      targetTop = pageIndex * pageHeight;
+
+    }
+
     el.scrollTo({
       top: targetTop,
-      behavior: 'auto'
+      behavior: 'instant'
     });
 
   }
 
   return {
     stage,
+    navbarHeight,
     insureanceData,
     currentPage,
     currentRole,

@@ -65,9 +65,10 @@ function goToNextStage() {
   switch (store.stage) {
     case 'preview':
       store.stage = 'sign1';
+      store.currentPage = 0;
+      tipBar.value = true;
       break;
     case 'sign1':
-      store.currentPage = 0;
       router.push('/vlist');
       break;
     default:
@@ -139,12 +140,13 @@ watch(
       <v-col cols="11">
         <v-sheet class="bgPrimaryColor position-relative">
           <v-sheet
+            id="canvasId"
             ref="scrollContainerRef"
             class="d-flex justify-center bg-transparent overflow-auto"
             :max-height="maxHeight"
           >
             <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
-              <SignaturedNavbar v-if="store.stage !== 'preview'" />
+              <SignaturedNavbar :class="store.stage === 'preview' ? 'opacity-0' : 'opacity-1'" />
               <!-- <SignaturedNavbar /> -->
             </v-sheet>
             <div>

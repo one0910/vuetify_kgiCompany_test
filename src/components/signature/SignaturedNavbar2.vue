@@ -34,6 +34,9 @@ watch(
   () => store.stage,
   async () => {
     await nextTick();
+    // setTimeout(() => {
+    //   store.skipToSignPosition(0, 'button');
+    // }, 1000);
   }
 );
 </script>

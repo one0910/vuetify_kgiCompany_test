@@ -32,6 +32,10 @@ async function renderAllCanvas() {
       // console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
     }
   }
+  //所有的canvas渲染完畢後，老整個頁面的高度才會是對的，這個時候再來執行scrollTo，才會有作用，也才能到正確的位置
+  if (store.stage === 'sign1') {
+    store.skipToSignPosition(0, 'button');
+  }
   isLoading.value = false;
 }
 

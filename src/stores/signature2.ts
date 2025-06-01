@@ -202,7 +202,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const mouseX = (event.clientX - rect.left) * scaleX;
           const mouseY = (event.clientY - rect.top) * scaleY;
 
-          // console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
+          console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
         });
         resolve(canvas); // ✅ 回傳 canvas
 
@@ -323,6 +323,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
       behavior: 'instant',
     });
   }
+
+
 
   return {
     stage,

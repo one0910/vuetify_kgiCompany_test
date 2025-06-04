@@ -11,7 +11,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   type SignStatus = 'unselected' | 'unsigned' | 'signed';
   const insureanceData = ref<any[]>([]);
   const stage = ref<Stage>('preview');
-  const currentRole = ref(0)
+  const currentRole = ref({ index: 0, type: 0 })
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
@@ -25,9 +25,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
       .filter(item => item.type === currentRole.value)
       .every(item => item.signimg?.trim());
   });
-  const clickTabMapToType = computed(() => {
-    return signatureButton.value[currentPage.value]?.type ?? null;
-  });
+
 
 
   //是否啟用下一步的按鈕
@@ -36,7 +34,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
       return insureanceData.value.every(doc => doc.readComplete);
     }
     if (stage.value === 'sign1') {
-      return signatureButton.value.every(doc => doc.signimg)
+      return insureanceData.value.every(doc =>
+        (doc.signature || []).every(sig => sig.signimg?.trim())
+      );
     }
     return false;
   });
@@ -45,6 +45,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   // 後端傳來的資料做好整理後放至insureanceData
   async function fetchInsureanceDocs() {
     const data = await getSignatureDoc();
+    originalStatusMap.value = {};
     if (!data) return;
 
     const { form, sign } = data;
@@ -54,20 +55,32 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (!acc[sig.form]) {
         acc[sig.form] = [];
       }
-      acc[sig.form].push(sig);
+      acc[sig.form].push({
+        ...sig,
+        type: parseInt(sig.type),
+        sigIndex: acc[sig.form].length
+      });
       return acc;
     }, {});
 
     // 將 form 結合對應的 signature
-    const transformedData = form.map((item: any, index: number) => {
-      return {
-        ...item,
-        // type:[].push(groupedSignatures) || []
-        pageIndex: index,
-        signature: groupedSignatures[item.form] || [],
-        pageHeight: 0,
-      }
-    });
+    const transformedData = await Promise.all(
+      form.map(async (item, index) => {
+        const documentHeight = await getImageHeight(item.docSource);
+        originalStatusMap.value[index] = {
+          status: 'unselected',
+          type: 9
+        }
+        return {
+          ...item,
+          pageIndex: index,
+          signature: groupedSignatures[item.form] || [],
+          pageHeight: 0,
+          documentHeight,
+        };
+      })
+    );
+
     insureanceData.value = transformedData;
     transformToSignatureButtons(transformedData);
   }
@@ -75,9 +88,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //再將資料重整至signatureButton
   async function transformToSignatureButtons(docs: any[]) {
     signatureButton.value = []; // 清空之前的資料
-    originalStatusMap.value = {};
     for (const doc of docs) {
-      const documentHeight = await getImageHeight(doc.tiffUrl);
+      const documentHeight = await getImageHeight(doc.docSource);
       for (const sig of doc.signature || []) {
         const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
         const type = parseInt(sig.type);
@@ -88,15 +100,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
           type,
           pageIndex: doc.pageIndex,
           form: doc.form,
-          tiffUrl: doc.tiffUrl,
+          docSource: doc.docSource,
           signedStatus: status,
           documentHeight,
 
         });
-        originalStatusMap.value[index] = {
-          status,
-          type
-        };
       }
     }
     setFirstPageCurrentRole()
@@ -104,7 +112,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   function setFirstPageCurrentRole() {
     const first = signatureButton.value[0];
-    currentRole.value = first ? first.type : 0;
+    currentRole.value = first ? { index: 0, type: first.type } : { index: 0, type: 0 };
+    switchRoleToButton(0)
   }
 
   //取得每個圖片的高度
@@ -119,43 +128,68 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   //角色列按鈕
   const signatureRoleType = computed(() => {
-    const roleMap = new Map<number, {
-      type: number;
-      name: string;
-      allSignedComplete: boolean;
-      pageIndex: number[];
-      buttonIndex: number[];
-    }>();
+    const roleMap = new Map<number, Record<number, { sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
 
-    signatureButton.value.forEach((item, index) => {
-      const type = item.type;
-      const pageIndex = item.pageIndex;
-
-      if (!roleMap.has(type)) {
-        roleMap.set(type, {
-          type,
-          name: typeMapRole[type] || `未知角色 ${type}`,
-          allSignedComplete: true,
-          pageIndex: [pageIndex],
-          buttonIndex: [index],
-        });
-      } else {
-        const role = roleMap.get(type)!;
-
-        if (!role.pageIndex.includes(pageIndex)) {
-          role.pageIndex.push(pageIndex);
+    for (const doc of insureanceData.value) {
+      const pageIndex = doc.pageIndex;
+      for (const sig of doc.signature || []) {
+        const type = parseInt(sig.type);
+        if (!roleMap.has(type)) {
+          roleMap.set(type, {});
         }
 
-        role.buttonIndex.push(index);
+        // 如果這頁中已有該角色，跳過避免覆蓋（根據你資料結構，每頁一個type對應一筆簽名）
+        if (!roleMap.get(type)![pageIndex]) {
+          roleMap.get(type)![pageIndex] = {
+            signId: sig.signId,
+            signimg: sig.signimg,
+            sigIndex: sig.sigIndex,
+            xy: sig.xy,
+            documentHeight: doc.documentHeight,
+            pageHeight: doc.pageHeight,
+            pageIndex: doc.pageIndex,
+          };
+        }
+      }
+    }
+
+    // ✅ 產生完整的 signatureRoleType 陣列，並生成 buttonStatus
+    const result = Array.from(roleMap.entries()).map(([type, pageMap]) => {
+      const buttonStatus: SignStatus[] = [];
+      const totalPages = insureanceData.value.length;
+
+      for (let i = 0; i < totalPages; i++) {
+        if (pageMap[i]) {
+          buttonStatus.push(pageMap[i].signimg?.trim() ? 'signed' : 'unsigned');
+        } else {
+          buttonStatus.push('unselected');
+        }
       }
 
-      if (!item.signimg?.trim()) {
-        roleMap.get(type)!.allSignedComplete = false;
-      }
+      return {
+        type,
+        name: typeMapRole[type] || `未知角色 ${type}`,
+        pageIndex: pageMap,
+        allSignedComplete: false,
+        buttonStatus
+      };
     });
 
-    return Array.from(roleMap.values());
+    return result;
   });
+
+
+  function switchRoleToButton(index: number) {
+    const docs = currentDocs.value;
+    const role = signatureRoleType.value[index];
+
+    // 根據對應角色的 buttonStatus，逐頁更新 currentDocs 中的 buttonStatus
+    role.buttonStatus.forEach((status, pageIndex) => {
+      if (docs[pageIndex]) {
+        docs[pageIndex].buttonStatus = status;
+      }
+    });
+  }
 
 
   //引用Canvas組件的參考
@@ -165,7 +199,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
-    const base64 = doc.tiffUrl;
+    const base64 = doc.docSource;
 
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -202,7 +236,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const mouseX = (event.clientX - rect.left) * scaleX;
           const mouseY = (event.clientY - rect.top) * scaleY;
 
-          console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
+          // console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
         });
         resolve(canvas); // ✅ 回傳 canvas
 
@@ -249,52 +283,81 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   //上、下按鈕切換
   function switchSignButton({ index = currentPage.value, type = '' }) {
-    const buttons = signatureButton.value;
-    const total = buttons.length;
+    const role = signatureRoleType.value[currentRole.value.index];
+    const pageKeys = Object.keys(role.pageIndex).map(k => Number(k)).sort((a, b) => a - b);
+    const currentIdx = pageKeys.findIndex(k => k === currentPage.value);
 
     if (type === 'next') {
-      let nextIndex = currentPage.value + 1;
-      while (nextIndex < total && buttons[nextIndex].signimg?.trim()) {
-        nextIndex++;
-      }
-      if (nextIndex < total) {
-        // ✅ 恢復當前的原始狀態
-        buttons[currentPage.value].signedStatus = originalStatusMap.value[currentPage.value]?.status;
-        currentPage.value = nextIndex;
-        if (buttons[nextIndex].signedStatus === 'unselected') {
-          buttons[nextIndex].signedStatus = 'unsigned';
+      const nextIdx = currentIdx + 1;
+
+      if (nextIdx < pageKeys.length) {
+        const nextKey = pageKeys[nextIdx];
+        currentPage.value = nextKey;
+        const sig = role.pageIndex[nextKey];
+        console.log(`➡️ 下一頁 index: ${nextKey}, xy: ${sig.xy}`);
+        console.log(`nextKey => `, nextKey)
+        // console.log(`pageKeys => `,pageKeys)
+        // console.log(`nextIdx => `, nextIdx)
+        skipToSignPosition(nextKey.toString(), 'button')
+      } else {
+        const allSigned = Object.values(role.pageIndex).every(item => item.signimg?.trim());
+        if (!allSigned) {
+          alert('您尚未簽署完畢');
+          return;
         }
-        skipToSignPosition(nextIndex, 'button')
-        // currentRole.value = originalStatusMap.value[currentPage.value]?.type
+        const nextRoleIdx = currentRole.value.index + 1;
+        if (nextRoleIdx < signatureRoleType.value.length) {
+          currentRole.value = {
+            index: nextRoleIdx,
+            type: signatureRoleType.value[nextRoleIdx].type
+          };
+          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageIndex)[0]);
+          currentPage.value = firstKey;
+          console.log(`firstKey => `, firstKey)
+          role.allSignedComplete
+          switchRoleToButton(nextRoleIdx)
+          skipToSignPosition(firstKey.toString(), 'button')
+          console.log(`➡️ 切換角色至 index: ${firstKey}`);
+
+        }
       }
     } else if (type === 'last') {
-      let prevIndex = currentPage.value - 1;
-      while (prevIndex >= 0 && buttons[prevIndex].signimg?.trim()) {
-        prevIndex--;
-      }
-      if (prevIndex >= 0) {
-        // ✅ 恢復當前的原始狀態p
-        buttons[currentPage.value].signedStatus = originalStatusMap.value[currentPage.value]?.status;
-        currentPage.value = prevIndex;
-        if (buttons[prevIndex].signedStatus === 'unselected') {
-          buttons[prevIndex].signedStatus = 'unsigned';
+      const prevIdx = currentIdx - 1;
+      if (prevIdx >= 0) {
+        const prevKey = pageKeys[prevIdx];
+        currentPage.value = prevKey;
+        const sig = role.pageIndex[prevKey];
+        console.log(`⬅️ 上一頁 index: ${prevKey}, xy: ${sig.xy}`);
+        skipToSignPosition(prevKey.toString(), 'button')
+      } else {
+        const prevRoleIdx = currentRole.value.index - 1;
+        if (prevRoleIdx >= 0) {
+          currentRole.value = {
+            index: prevRoleIdx,
+            type: signatureRoleType.value[prevRoleIdx].type
+          };
+          const lastKeys = Object.keys(signatureRoleType.value[prevRoleIdx].pageIndex).map(k => Number(k)).sort((a, b) => a - b);
+          const lastKey = lastKeys[lastKeys.length - 1];
+          currentPage.value = lastKey;
+          const sig = signatureRoleType.value[prevRoleIdx].pageIndex[lastKey];
+          switchRoleToButton(prevRoleIdx)
+          skipToSignPosition(lastKey.toString(), 'button')
+          console.log(`⬅️ 切換角色至 index: ${lastKey}, xy: ${sig.xy}`);
         }
-        skipToSignPosition(prevIndex, 'button')
-
-        // currentRole.value = originalStatusMap.value[currentPage.value]?.type
       }
     } else {
       currentPage.value = index;
-      skipToSignPosition(index, 'button')
     }
   }
 
+
   //跳到簽名的位置
-  function skipToSignPosition(buttonIndex: number = 0, type: string) {
+  function skipToSignPosition(positionIndex: string = '', type: string) {
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value;
     if (!(el instanceof HTMLElement)) return;
-
-    const target = signatureButton.value[buttonIndex];
+    const roleIndex = currentRole.value.index
+    const target = signatureRoleType.value[roleIndex].pageIndex[positionIndex];
+    console.log(`target => `, target)
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
 
@@ -302,9 +365,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
     if (type === 'button') {
       // ✅ 正確地從 currentDocs 計算前面頁面的總高度
-      const accumulatedHeight = currentDocs.value
-        .slice(0, pageIndex)
-        .reduce((sum, doc) => sum + (doc.pageHeight || 0), 0);
+      const accumulatedHeight = (pageHeight || 0) * (pageIndex || 0);
 
       const yOffset = (pageHeight / documentHeight) * y;
 
@@ -336,6 +397,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     switchPage,
     skipToSignPosition,
     switchSignButton,
+    switchRoleToButton,
     renderInsureanceDoc,
     renderedCanvas,
     isLoading,
@@ -348,6 +410,5 @@ export const useInsureanceStore = defineStore('insureance', () => {
     signatureButton,
     signatureRoleType,
     allCurrentRoleSigned,
-    clickTabMapToType
   };
 });

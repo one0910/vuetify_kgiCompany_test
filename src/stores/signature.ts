@@ -77,7 +77,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     signatureButton.value = []; // 清空之前的資料
     originalStatusMap.value = {};
     for (const doc of docs) {
-      const documentHeight = await getImageHeight(doc.tiffUrl);
+      const documentHeight = await getImageHeight(doc.docSource);
       for (const sig of doc.signature || []) {
         const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
         const type = parseInt(sig.type);
@@ -88,7 +88,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           type,
           pageIndex: doc.pageIndex,
           form: doc.form,
-          tiffUrl: doc.tiffUrl,
+          docSource: doc.docSource,
           signedStatus: status,
           documentHeight,
 
@@ -165,7 +165,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
-    const base64 = doc.tiffUrl;
+    const base64 = doc.docSource;
 
     return new Promise((resolve, reject) => {
       const img = new Image();

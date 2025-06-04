@@ -6,9 +6,12 @@ const store = useInsureanceStore();
 const { signatureRoleType, currentRole, clickTabMapToType } = storeToRefs(store);
 const navbarRef = ref(null);
 
-function switchRoleHandler({ type, buttonIndex }) {
-  store.currentRole = type;
-  store.skipToSignPosition(buttonIndex[0], 'role');
+function switchRoleHandler({ type }, buttonIndex) {
+  store.currentRole = { index: buttonIndex, type };
+  console.log(`store.currentRole => `, store.currentRole);
+  store.switchRoleToButton(buttonIndex);
+  store.skipToSignPosition('0', 'button');
+  // store.skipToSignPosition(buttonIndex[0], 'role');
 }
 
 // onMounted(async () => {
@@ -34,9 +37,6 @@ watch(
   () => store.stage,
   async () => {
     await nextTick();
-    // setTimeout(() => {
-    //   store.skipToSignPosition(0, 'button');
-    // }, 1000);
   }
 );
 </script>
@@ -50,10 +50,7 @@ watch(
     >
       <v-list-item
         class="rounded-xl py-0"
-        :class="[
-          item.type === currentRole ? 'bg-blue-darken-4' : 'bg-grey-darken-1',
-          item.type === clickTabMapToType ? 'border-clickTab' : ''
-        ]"
+        :class="[item.type === currentRole.type ? 'bg-blue-darken-4' : 'bg-grey-darken-1']"
         @click="switchRoleHandler(item, index)"
       >
         <v-avatar

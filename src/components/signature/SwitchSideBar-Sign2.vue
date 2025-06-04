@@ -16,9 +16,23 @@ async function setSignatureButton() {
 }
 
 function signatueTest(index) {
-  store.signatureButton[index].signimg = '4123412';
-  store.signatureButton[index].signedStatus = 'signed';
-  store.originalStatusMap[index].status = 'signed';
+  const roleIndex = store.currentRole.index;
+  const signatrueRole = store.signatureRoleType[roleIndex].pageIndex[index.toString()];
+  const currentDocIndex = signatrueRole.pageIndex;
+  const currentDocSigIndex = signatrueRole.sigIndex;
+  store.currentDocs[index].buttonStatus = 'signed';
+  store.signatureRoleType[roleIndex].buttonStatus[index] = 'signed';
+  signatrueRole.signimg = 'aaaaa';
+  store.currentDocs[currentDocIndex].signature[currentDocSigIndex].signimg = 'aaaaa';
+}
+
+function skipHandler({ buttonStatus }, index) {
+  if (buttonStatus !== 'unselected') {
+    store.skipToSignPosition(index.toString(), 'button');
+  } else {
+    alert('test');
+    store.scrollToPage(index);
+  }
 }
 
 onMounted(() => {
@@ -31,46 +45,25 @@ onMounted(() => {
     }
   );
 });
-
-watch(
-  () => store.currentRole,
-  (role) => {
-    store.signatureButton.forEach((button, index) => {
-      if (button.type === role) {
-        button.signedStatus = button.signimg?.trim() ? 'signed' : 'unsigned';
-        store.originalStatusMap[index].status = button.signimg?.trim() ? 'signed' : 'unsigned';
-      } else {
-        button.signedStatus = button.signimg?.trim() ? 'signed' : 'unselected';
-        store.originalStatusMap[index].status = button.signimg?.trim() ? 'signed' : 'unselected';
-      }
-    });
-  },
-  { immediate: true }
-);
 </script>
 
 <template>
   <v-sheet height="450" class="bgPrimaryColor overflow-y-auto">
     <v-list class="bgPrimaryColor">
-      <v-list-item
-        v-for="(item, index) in store.signatureButton"
-        :key="index"
-        tag="div"
-        class="px-0"
-      >
+      <v-list-item v-for="(item, index) in store.currentDocs" :key="index" tag="div" class="px-0">
         <template v-slot>
           <div
             class="d-flex justify-center align-center cursor-pointer"
-            @click="store.switchSignButton({ index })"
+            @click="skipHandler(item, index)"
           >
             <v-avatar
               size="32"
               class="pa-3"
               :class="[
                 index === currentPage ? 'border-active' : 'border-inactive',
-                item.signedStatus === 'signed'
+                item.buttonStatus === 'signed'
                   ? 'bg-green'
-                  : item.signedStatus === 'unsigned'
+                  : item.buttonStatus === 'unsigned'
                     ? 'bg-red'
                     : 'bg-transparent'
               ]"
@@ -79,9 +72,9 @@ watch(
                 color="white"
                 size="15"
                 :icon="
-                  item.signedStatus === 'signed'
+                  item.buttonStatus === 'signed'
                     ? 'mdi-check'
-                    : item.signedStatus === 'unsigned'
+                    : item.buttonStatus === 'unsigned'
                       ? 'mdi-pencil-outline'
                       : ''
                 "
@@ -93,8 +86,13 @@ watch(
               :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
             >
               0{{ index + 1 }}
+              <span
+                class="ml-2"
+                @click="signatueTest(index)"
+                v-if="showFakeSign && item.buttonStatus !== 'unselected'"
+                >簽</span
+              >
             </v-list-item-subtitle>
-            <span class="ml-2" @click="signatueTest(index)" v-if="showFakeSign">簽</span>
           </div>
         </template>
       </v-list-item>

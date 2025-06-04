@@ -22,7 +22,6 @@ function detectBottom(event) {
   const scrollPosition = scrollTop + clientHeight;
 
   let cumulativeHeight = 0;
-  console.log(`scrollTop => `, scrollTop);
   if (scrollHeight <= clientHeight + 1) return;
 
   store.currentDocs.forEach((doc, index) => {

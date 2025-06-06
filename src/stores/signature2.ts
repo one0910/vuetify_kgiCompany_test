@@ -20,12 +20,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const currentDocs = computed(() => insureanceData.value);
   const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
   const navbarHeight = ref<number>(0)
-  const allCurrentRoleSigned = computed(() => {
-    return signatureButton.value
-      .filter(item => item.type === currentRole.value)
-      .every(item => item.signimg?.trim());
-  });
-
+  const signatureRoleType = ref<any[]>([])
 
 
   //是否啟用下一步的按鈕
@@ -82,36 +77,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
     );
 
     insureanceData.value = transformedData;
-    transformToSignatureButtons(transformedData);
-  }
-
-  //再將資料重整至signatureButton
-  async function transformToSignatureButtons(docs: any[]) {
-    signatureButton.value = []; // 清空之前的資料
-    for (const doc of docs) {
-      const documentHeight = await getImageHeight(doc.docSource);
-      for (const sig of doc.signature || []) {
-        const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
-        const type = parseInt(sig.type);
-        const index = signatureButton.value.length;
-
-        signatureButton.value.push({
-          ...sig,
-          type,
-          pageIndex: doc.pageIndex,
-          form: doc.form,
-          docSource: doc.docSource,
-          signedStatus: status,
-          documentHeight,
-
-        });
-      }
-    }
+    buildSignatureRoleType()
     setFirstPageCurrentRole()
   }
 
+
   function setFirstPageCurrentRole() {
-    const first = signatureButton.value[0];
+    const first = signatureRoleType.value[0];
     currentRole.value = first ? { index: 0, type: first.type } : { index: 0, type: 0 };
     switchRoleToButton(0)
   }
@@ -127,10 +99,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   //角色列按鈕
-  const signatureRoleType = computed(() => {
+  function buildSignatureRoleType() {
     const roleMap = new Map<number, Record<number, { sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
 
     for (const doc of insureanceData.value) {
+      console.log(`doc.pageHeight => `, doc.pageHeight)
       const pageIndex = doc.pageIndex;
       for (const sig of doc.signature || []) {
         const type = parseInt(sig.type);
@@ -169,15 +142,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
       return {
         type,
         name: typeMapRole[type] || `未知角色 ${type}`,
-        pageIndex: pageMap,
+        pageData: pageMap,
         allSignedComplete: false,
         buttonStatus
       };
     });
-
-    return result;
-  });
-
+    signatureRoleType.value = result;
+  }
 
   function switchRoleToButton(index: number) {
     const docs = currentDocs.value;
@@ -258,6 +229,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // }
   }
 
+  function checkRoleSignAll(roleIndex: number): boolean {
+    const role = signatureRoleType.value[roleIndex];
+    if (!role || !role.pageData) return false;
+
+    return Object.values(role.pageData).every((item: any) => item.signimg?.trim());
+  }
+
   //滑行滾輪移動到該頁
   function scrollToPage(pageIndex: number) {
 
@@ -284,7 +262,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //上、下按鈕切換
   function switchSignButton({ index = currentPage.value, type = '' }) {
     const role = signatureRoleType.value[currentRole.value.index];
-    const pageKeys = Object.keys(role.pageIndex).map(k => Number(k)).sort((a, b) => a - b);
+    console.log(`role => `, role)
+    const pageKeys = Object.keys(role.pageData).map(k => Number(k)).sort((a, b) => a - b);
     const currentIdx = pageKeys.findIndex(k => k === currentPage.value);
 
     if (type === 'next') {
@@ -293,15 +272,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (nextIdx < pageKeys.length) {
         const nextKey = pageKeys[nextIdx];
         currentPage.value = nextKey;
-        const sig = role.pageIndex[nextKey];
+        const sig = role.pageData[nextKey];
         console.log(`➡️ 下一頁 index: ${nextKey}, xy: ${sig.xy}`);
         console.log(`nextKey => `, nextKey)
-        // console.log(`pageKeys => `,pageKeys)
-        // console.log(`nextIdx => `, nextIdx)
         skipToSignPosition(nextKey.toString(), 'button')
       } else {
-        const allSigned = Object.values(role.pageIndex).every(item => item.signimg?.trim());
-        if (!allSigned) {
+        const isRoleAllSignCheck = checkRoleSignAll(currentRole.value.index);
+        if (!isRoleAllSignCheck) {
           alert('您尚未簽署完畢');
           return;
         }
@@ -311,7 +288,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
             index: nextRoleIdx,
             type: signatureRoleType.value[nextRoleIdx].type
           };
-          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageIndex)[0]);
+          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageData)[0]);
           currentPage.value = firstKey;
           console.log(`firstKey => `, firstKey)
           role.allSignedComplete
@@ -326,8 +303,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (prevIdx >= 0) {
         const prevKey = pageKeys[prevIdx];
         currentPage.value = prevKey;
-        const sig = role.pageIndex[prevKey];
-        console.log(`⬅️ 上一頁 index: ${prevKey}, xy: ${sig.xy}`);
+        const sig = role.pageData[prevKey];
+        console.log(`⬅️ 上一頁 index: ${prevKey}`);
         skipToSignPosition(prevKey.toString(), 'button')
       } else {
         const prevRoleIdx = currentRole.value.index - 1;
@@ -336,13 +313,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
             index: prevRoleIdx,
             type: signatureRoleType.value[prevRoleIdx].type
           };
-          const lastKeys = Object.keys(signatureRoleType.value[prevRoleIdx].pageIndex).map(k => Number(k)).sort((a, b) => a - b);
+          const lastKeys = Object.keys(signatureRoleType.value[prevRoleIdx].pageData).map(k => Number(k)).sort((a, b) => a - b);
           const lastKey = lastKeys[lastKeys.length - 1];
           currentPage.value = lastKey;
-          const sig = signatureRoleType.value[prevRoleIdx].pageIndex[lastKey];
           switchRoleToButton(prevRoleIdx)
           skipToSignPosition(lastKey.toString(), 'button')
-          console.log(`⬅️ 切換角色至 index: ${lastKey}, xy: ${sig.xy}`);
+          console.log(`⬅️ 切換角色至 index: ${lastKey}`);
         }
       }
     } else {
@@ -356,8 +332,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value;
     if (!(el instanceof HTMLElement)) return;
     const roleIndex = currentRole.value.index
-    const target = signatureRoleType.value[roleIndex].pageIndex[positionIndex];
-    console.log(`target => `, target)
+    const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
 
@@ -371,12 +346,15 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
       targetTop = accumulatedHeight + yOffset - navbarHeight.value;
 
+
       // console.log('📌 scrollTo 詳細資訊：');
-      // console.log('pageIndex:', pageIndex);
-      // console.log('accumulatedHeight:', accumulatedHeight);
-      // console.log('yOffset:', yOffset);
-      // console.log('navbarHeight:', navbarHeight.value);
-      // console.log('targetTop:', targetTop);
+      console.log('pageIndex:', pageIndex);
+      console.log(`pageHeight => `, pageHeight)
+      console.log(`documentHeight => `, documentHeight)
+      console.log('accumulatedHeight:', accumulatedHeight);
+      console.log('yOffset:', yOffset);
+      console.log('navbarHeight:', navbarHeight.value);
+      console.log('targetTop:', targetTop);
     }
 
     el.scrollTo({
@@ -407,8 +385,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     enableNextButton,
     currentDocs,
     fetchInsureanceDocs,
-    signatureButton,
     signatureRoleType,
-    allCurrentRoleSigned,
+    checkRoleSignAll
   };
 });

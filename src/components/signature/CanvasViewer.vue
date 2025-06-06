@@ -10,6 +10,7 @@ const isLoading = ref(false);
 
 // 首次掛載時也更新一次畫布
 async function renderAllCanvas() {
+  const roleTypeList = store.signatureRoleType;
   isLoading.value = true;
   if (!canvasRef.value) return;
 
@@ -22,17 +23,18 @@ async function renderAllCanvas() {
 
       await new Promise((resolve) => requestAnimationFrame(resolve));
       const domHeight = canvas.offsetHeight;
+      //把渲染過後的canvas高度寫入到currentDoc
       documents[i].pageHeight = domHeight;
 
-      store.signatureButton.forEach((sig) => {
-        if (sig.pageIndex === i) {
-          sig.pageHeight = domHeight;
+      //把渲染過後的canvas高度寫入到signatureRoleType裡的pageData
+      for (const role of roleTypeList) {
+        if (role.pageData[i]) {
+          role.pageData[i].pageHeight = domHeight;
         }
-      });
-      // console.log(`📏 第 ${i + 1} 頁 DOM 高度為 ${domHeight}px`);
+      }
     }
   }
-  //所有的canvas渲染完畢後，老整個頁面的高度才會是對的，這個時候再來執行scrollTo，才會有作用，也才能到正確的位置
+  //所有的canvas渲染完畢後，整個頁面的高度才會是對的，這個時候再來執行scrollTo，才會有作用，也才能到正確的位置
   if (store.stage === 'sign1') {
     store.skipToSignPosition('0', 'button');
   }

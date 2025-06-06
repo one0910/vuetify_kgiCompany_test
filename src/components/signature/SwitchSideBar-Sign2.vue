@@ -7,44 +7,29 @@ const currentPage = computed(() => store.currentPage);
 const props = defineProps(['showFakeSign']);
 const { showFakeSign } = toRefs(props);
 
-async function setSignatureButton() {
-  store.signatureButton.forEach((button) => {
-    if (store.currentRole === button.type && !button.signimg) {
-      button.signedStatus = 'unsigned';
-    }
-  });
-}
-
-function signatueTest(index) {
+async function signatueTest(index) {
   const roleIndex = store.currentRole.index;
-  const signatrueRole = store.signatureRoleType[roleIndex].pageIndex[index.toString()];
+  const signatrueRole = store.signatureRoleType[roleIndex].pageData[index.toString()];
   const currentDocIndex = signatrueRole.pageIndex;
   const currentDocSigIndex = signatrueRole.sigIndex;
   store.currentDocs[index].buttonStatus = 'signed';
   store.signatureRoleType[roleIndex].buttonStatus[index] = 'signed';
   signatrueRole.signimg = 'aaaaa';
   store.currentDocs[currentDocIndex].signature[currentDocSigIndex].signimg = 'aaaaa';
-}
-
-function skipHandler({ buttonStatus }, index) {
-  if (buttonStatus !== 'unselected') {
-    store.skipToSignPosition(index.toString(), 'button');
-  } else {
-    alert('test');
-    store.scrollToPage(index);
+  const isRoleAllSignCheck = await store.checkRoleSignAll(roleIndex);
+  if (isRoleAllSignCheck) {
+    store.signatureRoleType[roleIndex].allSignedComplete = true;
   }
 }
 
-onMounted(() => {
-  watch(
-    () => store.signatureButton,
-    (val) => {
-      if (val.length > 0) {
-        setSignatureButton();
-      }
-    }
-  );
-});
+function skipHandler({ buttonStatus }, index) {
+  store.currentPage = index;
+  if (buttonStatus !== 'unselected') {
+    store.skipToSignPosition(index.toString(), 'button');
+  } else {
+    store.scrollToPage(index);
+  }
+}
 </script>
 
 <template>

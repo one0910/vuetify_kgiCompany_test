@@ -1,14 +1,18 @@
-我突然想到另個方法,我想先從fetchInsureanceDocs的地方埋一個index的物件,用來記錄它signature它本身所在的位置
-groupedSignatures 裡在sigIndex地方加入的index, 如圖所示sigIndex它是跟著signature 的index
+經過你的建議,我已將SignatureRoleType用ref封裝, 不過我現在有個問題是在doc.pageHeight的部份,經過你的改寫,它的值一直都是0,
+這個值比較特別,它需要在canvas被append到DOM之後,才有辦法記算它的offsetHeight的高度
+你看一下src\components\signature\CanvasViewer.vue這支程式裡的 
+const domHeight = canvas.offsetHeight;
+documents[i].pageHeight = domHeight;
+這兩行程式碼,它就是我說的canvas的offsetHeight,它後來會再寫入到store裡的currentDocs裡的pageHeight,
+但由於我之前的SignatureRoleType的寫法是的是用insureanceData然後透過computed封裝成的,所以它的資料在變更時,都會響應式的自動更新
+所以SignatureRoleType的pageHeight就可以正確取得, 那依我目前的狀況,要怎麼解? 是否需要將insureanceData改寫成get、set的方? 還是你有其他方法?
 
-
+src\stores\signature2.ts
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
 import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
-
-
 
 export const useInsureanceStore = defineStore('insureance', () => {
   type Stage = 'preview' | 'sign1' | 'sign2';
@@ -24,12 +28,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const currentDocs = computed(() => insureanceData.value);
   const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
   const navbarHeight = ref<number>(0)
-  const allCurrentRoleSigned = computed(() => {
-    return signatureButton.value
-      .filter(item => item.type === currentRole.value)
-      .every(item => item.signimg?.trim());
-  });
-
+  const signatureRoleType = ref<any[]>([])
 
 
   //是否啟用下一步的按鈕
@@ -38,7 +37,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
       return insureanceData.value.every(doc => doc.readComplete);
     }
     if (stage.value === 'sign1') {
-      return signatureButton.value.every(doc => doc.signimg)
+      return insureanceData.value.every(doc =>
+        (doc.signature || []).every(sig => sig.signimg?.trim())
+      );
     }
     return false;
   });
@@ -60,7 +61,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
       acc[sig.form].push({
         ...sig,
         type: parseInt(sig.type),
-        sigIndex:0
+        sigIndex: acc[sig.form].length
       });
       return acc;
     }, {});
@@ -84,36 +85,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
     );
 
     insureanceData.value = transformedData;
-    transformToSignatureButtons(transformedData);
-  }
-
-  //再將資料重整至signatureButton
-  async function transformToSignatureButtons(docs: any[]) {
-    signatureButton.value = []; // 清空之前的資料
-    for (const doc of docs) {
-      const documentHeight = await getImageHeight(doc.docSource);
-      for (const sig of doc.signature || []) {
-        const status: SignStatus = sig.signimg?.trim() ? 'signed' : 'unselected';
-        const type = parseInt(sig.type);
-        const index = signatureButton.value.length;
-
-        signatureButton.value.push({
-          ...sig,
-          type,
-          pageIndex: doc.pageIndex,
-          form: doc.form,
-          docSource: doc.docSource,
-          signedStatus: status,
-          documentHeight,
-
-        });
-      }
-    }
+    buildSignatureRoleType()
     setFirstPageCurrentRole()
   }
 
+
   function setFirstPageCurrentRole() {
-    const first = signatureButton.value[0];
+    const first = signatureRoleType.value[0];
     currentRole.value = first ? { index: 0, type: first.type } : { index: 0, type: 0 };
     switchRoleToButton(0)
   }
@@ -129,10 +107,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   //角色列按鈕
-  const signatureRoleType = computed(() => {
-    const roleMap = new Map<number, Record<number, { pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
+  function buildSignatureRoleType() {
+    const roleMap = new Map<number, Record<number, { sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
 
-    for (const doc of insureanceData.value) {
+    for (const doc of  .value) {
+      console.log(`doc.pageHeight => `, doc.pageHeight)
       const pageIndex = doc.pageIndex;
       for (const sig of doc.signature || []) {
         const type = parseInt(sig.type);
@@ -145,6 +124,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           roleMap.get(type)![pageIndex] = {
             signId: sig.signId,
             signimg: sig.signimg,
+            sigIndex: sig.sigIndex,
             xy: sig.xy,
             documentHeight: doc.documentHeight,
             pageHeight: doc.pageHeight,
@@ -170,15 +150,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
       return {
         type,
         name: typeMapRole[type] || `未知角色 ${type}`,
-        pageIndex: pageMap,
+        pageData: pageMap,
         allSignedComplete: false,
         buttonStatus
       };
     });
-
-    return result;
-  });
-
+    signatureRoleType.value = result;
+  }
 
   function switchRoleToButton(index: number) {
     const docs = currentDocs.value;
@@ -259,6 +237,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // }
   }
 
+  function checkRoleSignAll(roleIndex: number): boolean {
+    const role = signatureRoleType.value[roleIndex];
+    if (!role || !role.pageData) return false;
+
+    return Object.values(role.pageData).every((item: any) => item.signimg?.trim());
+  }
+
   //滑行滾輪移動到該頁
   function scrollToPage(pageIndex: number) {
 
@@ -285,7 +270,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //上、下按鈕切換
   function switchSignButton({ index = currentPage.value, type = '' }) {
     const role = signatureRoleType.value[currentRole.value.index];
-    const pageKeys = Object.keys(role.pageIndex).map(k => Number(k)).sort((a, b) => a - b);
+    console.log(`role => `, role)
+    const pageKeys = Object.keys(role.pageData).map(k => Number(k)).sort((a, b) => a - b);
     const currentIdx = pageKeys.findIndex(k => k === currentPage.value);
 
     if (type === 'next') {
@@ -294,15 +280,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (nextIdx < pageKeys.length) {
         const nextKey = pageKeys[nextIdx];
         currentPage.value = nextKey;
-        const sig = role.pageIndex[nextKey];
+        const sig = role.pageData[nextKey];
         console.log(`➡️ 下一頁 index: ${nextKey}, xy: ${sig.xy}`);
         console.log(`nextKey => `, nextKey)
-        // console.log(`pageKeys => `,pageKeys)
-        // console.log(`nextIdx => `, nextIdx)
         skipToSignPosition(nextKey.toString(), 'button')
       } else {
-        const allSigned = Object.values(role.pageIndex).every(item => item.signimg?.trim());
-        if (!allSigned) {
+        const isRoleAllSignCheck = checkRoleSignAll(currentRole.value.index);
+        if (!isRoleAllSignCheck) {
           alert('您尚未簽署完畢');
           return;
         }
@@ -312,7 +296,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
             index: nextRoleIdx,
             type: signatureRoleType.value[nextRoleIdx].type
           };
-          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageIndex)[0]);
+          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageData)[0]);
           currentPage.value = firstKey;
           console.log(`firstKey => `, firstKey)
           role.allSignedComplete
@@ -327,8 +311,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (prevIdx >= 0) {
         const prevKey = pageKeys[prevIdx];
         currentPage.value = prevKey;
-        const sig = role.pageIndex[prevKey];
-        console.log(`⬅️ 上一頁 index: ${prevKey}, xy: ${sig.xy}`);
+        const sig = role.pageData[prevKey];
+        console.log(`⬅️ 上一頁 index: ${prevKey}`);
         skipToSignPosition(prevKey.toString(), 'button')
       } else {
         const prevRoleIdx = currentRole.value.index - 1;
@@ -337,13 +321,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
             index: prevRoleIdx,
             type: signatureRoleType.value[prevRoleIdx].type
           };
-          const lastKeys = Object.keys(signatureRoleType.value[prevRoleIdx].pageIndex).map(k => Number(k)).sort((a, b) => a - b);
+          const lastKeys = Object.keys(signatureRoleType.value[prevRoleIdx].pageData).map(k => Number(k)).sort((a, b) => a - b);
           const lastKey = lastKeys[lastKeys.length - 1];
           currentPage.value = lastKey;
-          const sig = signatureRoleType.value[prevRoleIdx].pageIndex[lastKey];
           switchRoleToButton(prevRoleIdx)
           skipToSignPosition(lastKey.toString(), 'button')
-          console.log(`⬅️ 切換角色至 index: ${lastKey}, xy: ${sig.xy}`);
+          console.log(`⬅️ 切換角色至 index: ${lastKey}`);
         }
       }
     } else {
@@ -357,8 +340,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value;
     if (!(el instanceof HTMLElement)) return;
     const roleIndex = currentRole.value.index
-    const target = signatureRoleType.value[roleIndex].pageIndex[positionIndex];
-    console.log(`target => `, target)
+    const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
 
@@ -372,12 +354,15 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
       targetTop = accumulatedHeight + yOffset - navbarHeight.value;
 
+
       // console.log('📌 scrollTo 詳細資訊：');
-      // console.log('pageIndex:', pageIndex);
-      // console.log('accumulatedHeight:', accumulatedHeight);
-      // console.log('yOffset:', yOffset);
-      // console.log('navbarHeight:', navbarHeight.value);
-      // console.log('targetTop:', targetTop);
+      console.log('pageIndex:', pageIndex);
+      console.log(`pageHeight => `, pageHeight)
+      console.log(`documentHeight => `, documentHeight)
+      console.log('accumulatedHeight:', accumulatedHeight);
+      console.log('yOffset:', yOffset);
+      console.log('navbarHeight:', navbarHeight.value);
+      console.log('targetTop:', targetTop);
     }
 
     el.scrollTo({
@@ -408,10 +393,71 @@ export const useInsureanceStore = defineStore('insureance', () => {
     enableNextButton,
     currentDocs,
     fetchInsureanceDocs,
-    signatureButton,
     signatureRoleType,
-    allCurrentRoleSigned,
+    checkRoleSignAll
   };
 });
 
+src\components\signature\CanvasViewer.vue
+<script setup>
+import { onMounted, ref, nextTick, defineExpose } from 'vue';
+import { useInsureanceStore } from '@/stores/signature';
+import Loading from '@/components/Loading.vue';
+const { documents } = defineProps(['documents']);
+
+const store = useInsureanceStore();
+const canvasRef = ref(null);
+const isLoading = ref(false);
+
+// 首次掛載時也更新一次畫布
+async function renderAllCanvas() {
+  isLoading.value = true;
+  if (!canvasRef.value) return;
+
+  canvasRef.value.innerHTML = '';
+  for (let i = 0; i < documents.length; i++) {
+    const canvas = await store.renderInsureanceDoc(documents[i], i);
+    if (canvas) {
+      canvasRef.value.appendChild(canvas);
+      await nextTick();
+
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const domHeight = canvas.offsetHeight;
+      documents[i].pageHeight = domHeight;
+    }
+  }
+  //所有的canvas渲染完畢後，整個頁面的高度才會是對的，這個時候再來執行scrollTo，才會有作用，也才能到正確的位置
+  if (store.stage === 'sign1') {
+    store.skipToSignPosition('0', 'button');
+  }
+  isLoading.value = false;
+}
+
+onMounted(async () => {
+  await renderAllCanvas();
+});
+
+defineExpose({
+  renderAllCanvas
+});
+</script>
+
+<template>
+  <Loading v-show="isLoading" />
+
+  <div
+    ref="canvasRef"
+    class="canvas-container border-xl"
+    :class="isLoading ? 'opacity-0' : 'opacity-1'"
+  ></div>
+</template>
+
+<style lang="scss" scoped>
+.canvas-container :deep(canvas) {
+  max-width: 100%;
+  border-bottom: 5px solid rgba(0, 0, 0, 0.2);
+  display: block;
+  margin: auto;
+}
+</style>
 

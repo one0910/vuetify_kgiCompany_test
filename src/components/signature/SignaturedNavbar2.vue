@@ -14,11 +14,6 @@ function switchRoleHandler({ type }, buttonIndex) {
   // store.skipToSignPosition(buttonIndex[0], 'role');
 }
 
-// onMounted(async () => {
-//   await nextTick();
-//   store.skipToSignPosition(0, 'button');
-// });
-
 watch(
   () => store.signatureRoleType.length,
   (length) => {
@@ -33,6 +28,7 @@ watch(
     }
   }
 );
+
 watch(
   () => store.stage,
   async () => {

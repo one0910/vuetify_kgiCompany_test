@@ -134,7 +134,6 @@ watch(
         <SwitchSideBarSign :showFakeSign="showFakeSign" v-else />
         <!-- <SwitchSideBarSign :showFakeSign="showFakeSign" /> -->
       </v-col>
-
       <!-- 保書、合約書內容 -->
       <v-col cols="11">
         <v-sheet class="bgPrimaryColor position-relative">

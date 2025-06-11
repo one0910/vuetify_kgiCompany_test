@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { fromArrayBuffer } from 'geotiff'
 import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
 
@@ -139,11 +138,15 @@ export const useInsureanceStore = defineStore('insureance', () => {
         }
       }
 
+      const allSignedComplete = Object.values(pageMap).every((entry: any) => {
+        return !!entry.signimg && entry.signimg.trim() !== '';
+      });
+
       return {
         type,
         name: typeMapRole[type] || `未知角色 ${type}`,
         pageData: pageMap,
-        allSignedComplete: false,
+        allSignedComplete,
         buttonStatus
       };
     });
@@ -246,7 +249,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
     for (let i = 0; i < pageIndex; i++) {
       const doc = currentDocs.value[i];
-      const height = (stage.value === 'preview' && 'pageHeight' in doc) ? doc.pageHeight : 0;
+      const height = doc.pageHeight || 0
       targetTop += height;
     }
 
@@ -272,14 +275,37 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (nextIdx < pageKeys.length) {
         const nextKey = pageKeys[nextIdx];
         currentPage.value = nextKey;
-        const sig = role.pageData[nextKey];
-        console.log(`➡️ 下一頁 index: ${nextKey}, xy: ${sig.xy}`);
-        console.log(`nextKey => `, nextKey)
+        console.log(`➡️ 下一頁 index: ${nextKey}`);
         skipToSignPosition(nextKey.toString(), 'button')
       } else {
         const isRoleAllSignCheck = checkRoleSignAll(currentRole.value.index);
+
+        // 若有發現該簽名類型(角色)尚未簽署完畢
         if (!isRoleAllSignCheck) {
           alert('您尚未簽署完畢');
+
+          // 先找出該簽名類型(角色)是否還有未簽名的，若有，則先將該type的資料先全部列出來
+          const incompleteRole = signatureRoleType.value.find((role) =>
+            (Object.values(role.pageData) as { signimg: string }[]).some(item => !item.signimg?.trim())
+          );
+          console.log(`incompleteRole => `, incompleteRole)
+
+          if (incompleteRole) {
+            //然後透過find方法，找出其該type未簽名裡的pageIndex (firstUnsignPage)
+            const unsignedPages = Object.values(incompleteRole.pageData) as { signimg: string; pageIndex: number }[];
+            const firstUnsignPage = unsignedPages.find(item => !item.signimg?.trim())?.pageIndex;
+            console.log(`incompleteRole.type => `, incompleteRole.type)
+
+            if (typeof firstUnsignPage === 'number') {
+              currentRole.value = {
+                index: signatureRoleType.value.findIndex(r => r.type === incompleteRole.type),
+                type: incompleteRole.type
+              };
+              currentPage.value = firstUnsignPage;
+              switchRoleToButton(currentRole.value.index);
+              skipToSignPosition(String(firstUnsignPage), 'button');
+            }
+          }
           return;
         }
         const nextRoleIdx = currentRole.value.index + 1;
@@ -335,27 +361,30 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
+    console.log(`pageIndex => `, pageIndex)
+    console.log(`pageHeight => `, pageHeight)
+    console.log(`documentHeight => `, documentHeight)
 
     let targetTop = 0;
 
     if (type === 'button') {
       // ✅ 正確地從 currentDocs 計算前面頁面的總高度
       const accumulatedHeight = (pageHeight || 0) * (pageIndex || 0);
-
       const yOffset = (pageHeight / documentHeight) * y;
 
       targetTop = accumulatedHeight + yOffset - navbarHeight.value;
 
 
       // console.log('📌 scrollTo 詳細資訊：');
-      console.log('pageIndex:', pageIndex);
-      console.log(`pageHeight => `, pageHeight)
-      console.log(`documentHeight => `, documentHeight)
-      console.log('accumulatedHeight:', accumulatedHeight);
-      console.log('yOffset:', yOffset);
-      console.log('navbarHeight:', navbarHeight.value);
-      console.log('targetTop:', targetTop);
+      // console.log('pageIndex:', pageIndex);
+      // console.log(`pageHeight => `, pageHeight)
+      // console.log(`documentHeight => `, documentHeight)
+      // console.log('accumulatedHeight:', accumulatedHeight);
+      // console.log('yOffset:', yOffset);
+      // console.log('navbarHeight:', navbarHeight.value);
+      // console.log('targetTop:', targetTop);
     }
+    console.log(`targetTop => `, targetTop)
 
     el.scrollTo({
       top: targetTop,

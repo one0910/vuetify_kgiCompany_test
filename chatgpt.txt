@@ -1,18 +1,14 @@
-經過你的建議,我已將SignatureRoleType用ref封裝, 不過我現在有個問題是在doc.pageHeight的部份,經過你的改寫,它的值一直都是0,
-這個值比較特別,它需要在canvas被append到DOM之後,才有辦法記算它的offsetHeight的高度
-你看一下src\components\signature\CanvasViewer.vue這支程式裡的 
-const domHeight = canvas.offsetHeight;
-documents[i].pageHeight = domHeight;
-這兩行程式碼,它就是我說的canvas的offsetHeight,它後來會再寫入到store裡的currentDocs裡的pageHeight,
-但由於我之前的SignatureRoleType的寫法是的是用insureanceData然後透過computed封裝成的,所以它的資料在變更時,都會響應式的自動更新
-所以SignatureRoleType的pageHeight就可以正確取得, 那依我目前的狀況,要怎麼解? 是否需要將insureanceData改寫成get、set的方? 還是你有其他方法?
+我們繼續,下面buildSignatureRoleType的程式碼,其中在allSignedComplete的這一段,你幫我改寫一下
+我希望allSignedComplete會去偵測if (!roleMap.get(type)![pageIndex]) {}裡的sig.signimg是否全有都值,若全都有值則allSignedComplet為true ,否則為false
 
-src\stores\signature2.ts
+
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { fromArrayBuffer } from 'geotiff'
 import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
+
+
 
 export const useInsureanceStore = defineStore('insureance', () => {
   type Stage = 'preview' | 'sign1' | 'sign2';
@@ -110,7 +106,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   function buildSignatureRoleType() {
     const roleMap = new Map<number, Record<number, { sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
 
-    for (const doc of  .value) {
+    for (const doc of insureanceData.value) {
       console.log(`doc.pageHeight => `, doc.pageHeight)
       const pageIndex = doc.pageIndex;
       for (const sig of doc.signature || []) {
@@ -194,18 +190,18 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
         if (stage.value !== 'preview') {
-        }
-        const highlights = (doc.signature || []).map(sig => ({
-          xy: sig.xy,
-          color: '#eb949459'
-        }));
+          const highlights = (doc.signature || []).map(sig => ({
+            xy: sig.xy,
+            color: '#eb949459'
+          }));
 
-        // 畫框
-        highlights.forEach(({ xy, color }) => {
-          const [x, y, width, height] = xy.split(',').map(Number);
-          ctx.fillStyle = color;
-          ctx.fillRect(x, y, width, height);
-        });
+          // 畫框
+          highlights.forEach(({ xy, color }) => {
+            const [x, y, width, height] = xy.split(',').map(Number);
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width, height);
+          });
+        }
 
         canvas.addEventListener('mousemove', (event) => {
           const rect = canvas.getBoundingClientRect(); // 取得畫布相對位置
@@ -254,7 +250,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
     for (let i = 0; i < pageIndex; i++) {
       const doc = currentDocs.value[i];
-      const height = (stage.value === 'preview' && 'pageHeight' in doc) ? doc.pageHeight : 0;
+      const height = doc.pageHeight || 0
       targetTop += height;
     }
 
@@ -280,14 +276,37 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (nextIdx < pageKeys.length) {
         const nextKey = pageKeys[nextIdx];
         currentPage.value = nextKey;
-        const sig = role.pageData[nextKey];
-        console.log(`➡️ 下一頁 index: ${nextKey}, xy: ${sig.xy}`);
-        console.log(`nextKey => `, nextKey)
+        console.log(`➡️ 下一頁 index: ${nextKey}`);
         skipToSignPosition(nextKey.toString(), 'button')
       } else {
         const isRoleAllSignCheck = checkRoleSignAll(currentRole.value.index);
+
+        // 若有發現該簽名類型(角色)尚未簽署完畢
         if (!isRoleAllSignCheck) {
           alert('您尚未簽署完畢');
+
+          // 先找出該簽名類型(角色)是否還有未簽名的，若有，則先將該type的資料先全部列出來
+          const incompleteRole = signatureRoleType.value.find((role) =>
+            (Object.values(role.pageData) as { signimg: string }[]).some(item => !item.signimg?.trim())
+          );
+          console.log(`incompleteRole => `, incompleteRole)
+
+          if (incompleteRole) {
+            //然後透過find方法，找出其該type未簽名裡的pageIndex (firstUnsignPage)
+            const unsignedPages = Object.values(incompleteRole.pageData) as { signimg: string; pageIndex: number }[];
+            const firstUnsignPage = unsignedPages.find(item => !item.signimg?.trim())?.pageIndex;
+            console.log(`incompleteRole.type => `, incompleteRole.type)
+
+            if (typeof firstUnsignPage === 'number') {
+              currentRole.value = {
+                index: signatureRoleType.value.findIndex(r => r.type === incompleteRole.type),
+                type: incompleteRole.type
+              };
+              currentPage.value = firstUnsignPage;
+              switchRoleToButton(currentRole.value.index);
+              skipToSignPosition(String(firstUnsignPage), 'button');
+            }
+          }
           return;
         }
         const nextRoleIdx = currentRole.value.index + 1;
@@ -343,27 +362,30 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
+    console.log(`pageIndex => `, pageIndex)
+    console.log(`pageHeight => `, pageHeight)
+    console.log(`documentHeight => `, documentHeight)
 
     let targetTop = 0;
 
     if (type === 'button') {
       // ✅ 正確地從 currentDocs 計算前面頁面的總高度
       const accumulatedHeight = (pageHeight || 0) * (pageIndex || 0);
-
       const yOffset = (pageHeight / documentHeight) * y;
 
       targetTop = accumulatedHeight + yOffset - navbarHeight.value;
 
 
       // console.log('📌 scrollTo 詳細資訊：');
-      console.log('pageIndex:', pageIndex);
-      console.log(`pageHeight => `, pageHeight)
-      console.log(`documentHeight => `, documentHeight)
-      console.log('accumulatedHeight:', accumulatedHeight);
-      console.log('yOffset:', yOffset);
-      console.log('navbarHeight:', navbarHeight.value);
-      console.log('targetTop:', targetTop);
+      // console.log('pageIndex:', pageIndex);
+      // console.log(`pageHeight => `, pageHeight)
+      // console.log(`documentHeight => `, documentHeight)
+      // console.log('accumulatedHeight:', accumulatedHeight);
+      // console.log('yOffset:', yOffset);
+      // console.log('navbarHeight:', navbarHeight.value);
+      // console.log('targetTop:', targetTop);
     }
+    console.log(`targetTop => `, targetTop)
 
     el.scrollTo({
       top: targetTop,
@@ -397,67 +419,3 @@ export const useInsureanceStore = defineStore('insureance', () => {
     checkRoleSignAll
   };
 });
-
-src\components\signature\CanvasViewer.vue
-<script setup>
-import { onMounted, ref, nextTick, defineExpose } from 'vue';
-import { useInsureanceStore } from '@/stores/signature';
-import Loading from '@/components/Loading.vue';
-const { documents } = defineProps(['documents']);
-
-const store = useInsureanceStore();
-const canvasRef = ref(null);
-const isLoading = ref(false);
-
-// 首次掛載時也更新一次畫布
-async function renderAllCanvas() {
-  isLoading.value = true;
-  if (!canvasRef.value) return;
-
-  canvasRef.value.innerHTML = '';
-  for (let i = 0; i < documents.length; i++) {
-    const canvas = await store.renderInsureanceDoc(documents[i], i);
-    if (canvas) {
-      canvasRef.value.appendChild(canvas);
-      await nextTick();
-
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const domHeight = canvas.offsetHeight;
-      documents[i].pageHeight = domHeight;
-    }
-  }
-  //所有的canvas渲染完畢後，整個頁面的高度才會是對的，這個時候再來執行scrollTo，才會有作用，也才能到正確的位置
-  if (store.stage === 'sign1') {
-    store.skipToSignPosition('0', 'button');
-  }
-  isLoading.value = false;
-}
-
-onMounted(async () => {
-  await renderAllCanvas();
-});
-
-defineExpose({
-  renderAllCanvas
-});
-</script>
-
-<template>
-  <Loading v-show="isLoading" />
-
-  <div
-    ref="canvasRef"
-    class="canvas-container border-xl"
-    :class="isLoading ? 'opacity-0' : 'opacity-1'"
-  ></div>
-</template>
-
-<style lang="scss" scoped>
-.canvas-container :deep(canvas) {
-  max-width: 100%;
-  border-bottom: 5px solid rgba(0, 0, 0, 0.2);
-  display: block;
-  margin: auto;
-}
-</style>
-

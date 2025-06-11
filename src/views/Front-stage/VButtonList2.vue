@@ -144,8 +144,8 @@ watch(
             :max-height="maxHeight"
           >
             <v-sheet class="position-absolute top-0 left-0 w-100" color="transparent">
-              <SignaturedNavbar :class="store.stage === 'preview' ? 'opacity-0' : 'opacity-1'" />
-              <!-- <SignaturedNavbar /> -->
+              <!-- <SignaturedNavbar :class="store.stage === 'preview' ? 'opacity-0' : 'opacity-1'" /> -->
+              <SignaturedNavbar />
             </v-sheet>
             <div>
               <CanvasViewer ref="canvasViewerRef" :documents="store.currentDocs" />

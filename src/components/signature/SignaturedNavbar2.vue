@@ -15,17 +15,14 @@ function switchRoleHandler({ type }, buttonIndex) {
 }
 
 watch(
-  () => store.signatureRoleType.length,
-  (length) => {
-    if (length > 0) {
-      nextTick(() => {
-        const el = navbarRef.value?.$el || navbarRef.value;
-        // if (!(el instanceof HTMLElement)) return;
-        if (el) {
-          store.navbarHeight = el.offsetHeight;
-        }
-      });
-    }
+  () => store.stage,
+  () => {
+    nextTick(() => {
+      const el = navbarRef.value?.$el || navbarRef.value;
+      if (el) {
+        store.navbarHeight = el.offsetHeight;
+      }
+    });
   }
 );
 
@@ -37,7 +34,12 @@ watch(
 );
 </script>
 <template>
-  <v-sheet class="d-flex py-1" style="background-color: rgba(0, 0, 0, 0.71)" ref="navbarRef">
+  <v-sheet
+    class="py-1"
+    :class="[store.stage === 'preview' ? 'd-none' : 'd-flex']"
+    style="background-color: rgba(0, 0, 0, 0.71)"
+    ref="navbarRef"
+  >
     <v-list
       v-for="(item, index) in signatureRoleType"
       :key="index"

@@ -138,6 +138,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         }
       }
 
+      //從後端傳回來的資料要寫入至signatureRoleType，allSignedComplete是用來確認該簽名類型(角色)是否都已簽名
       const allSignedComplete = Object.values(pageMap).every((entry: any) => {
         return !!entry.signimg && entry.signimg.trim() !== '';
       });
@@ -265,21 +266,39 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //上、下按鈕切換
   function switchSignButton({ index = currentPage.value, type = '' }) {
     const role = signatureRoleType.value[currentRole.value.index];
-    console.log(`role => `, role)
     const pageKeys = Object.keys(role.pageData).map(k => Number(k)).sort((a, b) => a - b);
     const currentIdx = pageKeys.findIndex(k => k === currentPage.value);
+    const isRoleAllSignCheck = checkRoleSignAll(currentRole.value.index);
 
     if (type === 'next') {
-      const nextIdx = currentIdx + 1;
+      //先判定該簽名類型(角色)的簽名是否都已完成，若是完成，直接跳到下一個簽名類型(角色)
+      if (isRoleAllSignCheck) {
+        const nextRoleIdx = currentRole.value.index + 1;
+        if (nextRoleIdx < signatureRoleType.value.length) {
+          currentRole.value = {
+            index: nextRoleIdx,
+            type: signatureRoleType.value[nextRoleIdx].type
+          };
+          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageData)[0]);
+          currentPage.value = firstKey;
+          console.log(`firstKey => `, firstKey)
+          role.allSignedComplete
+          switchRoleToButton(nextRoleIdx)
+          skipToSignPosition(firstKey.toString(), 'button')
+          console.log(`➡️ 切換角色至 index: ${firstKey}`);
+        }
+        return
+      }
 
+      //跳到該簽名類型(角色)的下一個按鈕
+      const nextIdx = currentIdx + 1;
+      //是否在該簽名類型(角色)的最後一頁(最後一顆按鈕)
       if (nextIdx < pageKeys.length) {
         const nextKey = pageKeys[nextIdx];
         currentPage.value = nextKey;
-        console.log(`➡️ 下一頁 index: ${nextKey}`);
         skipToSignPosition(nextKey.toString(), 'button')
+        //若是在最後一顆按鈕，則判斷是否該簽名類型(角色)的簽名都簽完，
       } else {
-        const isRoleAllSignCheck = checkRoleSignAll(currentRole.value.index);
-
         // 若有發現該簽名類型(角色)尚未簽署完畢
         if (!isRoleAllSignCheck) {
           alert('您尚未簽署完畢');
@@ -288,7 +307,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const incompleteRole = signatureRoleType.value.find((role) =>
             (Object.values(role.pageData) as { signimg: string }[]).some(item => !item.signimg?.trim())
           );
-          console.log(`incompleteRole => `, incompleteRole)
 
           if (incompleteRole) {
             //然後透過find方法，找出其該type未簽名裡的pageIndex (firstUnsignPage)
@@ -308,28 +326,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
           }
           return;
         }
-        const nextRoleIdx = currentRole.value.index + 1;
-        if (nextRoleIdx < signatureRoleType.value.length) {
-          currentRole.value = {
-            index: nextRoleIdx,
-            type: signatureRoleType.value[nextRoleIdx].type
-          };
-          const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageData)[0]);
-          currentPage.value = firstKey;
-          console.log(`firstKey => `, firstKey)
-          role.allSignedComplete
-          switchRoleToButton(nextRoleIdx)
-          skipToSignPosition(firstKey.toString(), 'button')
-          console.log(`➡️ 切換角色至 index: ${firstKey}`);
-
-        }
       }
     } else if (type === 'last') {
       const prevIdx = currentIdx - 1;
       if (prevIdx >= 0) {
         const prevKey = pageKeys[prevIdx];
         currentPage.value = prevKey;
-        const sig = role.pageData[prevKey];
         console.log(`⬅️ 上一頁 index: ${prevKey}`);
         skipToSignPosition(prevKey.toString(), 'button')
       } else {
@@ -361,9 +363,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
-    console.log(`pageIndex => `, pageIndex)
-    console.log(`pageHeight => `, pageHeight)
-    console.log(`documentHeight => `, documentHeight)
 
     let targetTop = 0;
 
@@ -384,7 +383,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
       // console.log('navbarHeight:', navbarHeight.value);
       // console.log('targetTop:', targetTop);
     }
-    console.log(`targetTop => `, targetTop)
 
     el.scrollTo({
       top: targetTop,

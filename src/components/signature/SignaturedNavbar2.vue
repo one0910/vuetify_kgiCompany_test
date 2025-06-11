@@ -1,9 +1,9 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useInsureanceStore } from '@/stores/signature';
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 const store = useInsureanceStore();
-const { signatureRoleType, currentRole, clickTabMapToType } = storeToRefs(store);
+const { signatureRoleType, currentRole } = storeToRefs(store);
 const navbarRef = ref(null);
 
 function switchRoleHandler({ type }, buttonIndex) {
@@ -37,7 +37,7 @@ watch(
   <v-sheet
     class="py-1"
     :class="[store.stage === 'preview' ? 'd-none' : 'd-flex']"
-    style="background-color: rgba(0, 0, 0, 0.71)"
+    style="background-color: rgba(0, 0, 0, 0.8)"
     ref="navbarRef"
   >
     <v-list

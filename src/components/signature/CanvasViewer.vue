@@ -12,6 +12,7 @@ const isLoading = ref(false);
 async function renderAllCanvas() {
   const roleTypeList = store.signatureRoleType;
   isLoading.value = true;
+
   if (!canvasRef.value) return;
 
   canvasRef.value.innerHTML = '';
@@ -41,12 +42,26 @@ async function renderAllCanvas() {
   isLoading.value = false;
 }
 
+//寫入簽名後，更新canvas
+async function updateCanvasByIndex(index) {
+  const canvasContainer = canvasRef.value;
+  if (!canvasContainer) return;
+
+  const oldCanvas = canvasContainer.children[index];
+  const updatedCanvas = await store.renderInsureanceDoc(documents[index], index);
+
+  if (oldCanvas && updatedCanvas) {
+    canvasContainer.replaceChild(updatedCanvas, oldCanvas);
+  }
+}
+
 onMounted(async () => {
   await renderAllCanvas();
 });
 
 defineExpose({
-  renderAllCanvas
+  renderAllCanvas,
+  updateCanvasByIndex
 });
 </script>
 

@@ -15,7 +15,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const renderedCanvas = ref(null);
   const isLoading = ref(true)
   const scrollContainerRef = ref(null);
-  const signatureButton = ref<any[]>([]);
   const currentDocs = computed(() => insureanceData.value);
   const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
   const navbarHeight = ref<number>(0)
@@ -172,6 +171,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
     scrollContainerRef.value = el;
   }
 
+  function setCanvseViewer(canvasViewerRef: any) {
+    renderedCanvas.value = canvasViewerRef
+  }
+
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
@@ -192,14 +195,23 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (stage.value !== 'preview') {
           const highlights = (doc.signature || []).map(sig => ({
             xy: sig.xy,
-            color: '#eb949459'
+            signimg: sig.signimg,
+            color: (sig.signimg) ? 'rgba(242, 246, 255, 0.5' : '#eb949459'
           }));
 
           // 畫框
-          highlights.forEach(({ xy, color }) => {
+          highlights.forEach(({ xy, color, signimg }) => {
             const [x, y, width, height] = xy.split(',').map(Number);
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width, height);
+
+            const signImg = new Image();
+            signImg.src = signimg;
+            signImg.onload = () => {
+              ctx.drawImage(signImg, x, y, width, height);
+              ctx.fillStyle = color;
+              ctx.fillRect(x, y, width, height);
+            };
           });
         }
 
@@ -408,6 +420,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     isLoading,
     scrollContainerRef,
     setScrollContainer,
+    setCanvseViewer,
     scrollToPage,
     enableNextButton,
     currentDocs,

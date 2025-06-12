@@ -104,6 +104,8 @@ watch(
     if (length > 0) {
       nextTick(() => {
         canvasViewerRef.value?.renderAllCanvas();
+        //將canvasViewerRef寫至store
+        store.setCanvseViewer(canvasViewerRef.value);
       });
     }
   }

@@ -48,7 +48,7 @@ async function updateCanvasByIndex(index) {
   if (!canvasContainer) return;
 
   const oldCanvas = canvasContainer.children[index];
-  const updatedCanvas = await store.renderInsureanceDoc(documents[index], index);
+  const updatedCanvas = await store.renderInsureanceDoc(documents[index]);
 
   if (oldCanvas && updatedCanvas) {
     canvasContainer.replaceChild(updatedCanvas, oldCanvas);

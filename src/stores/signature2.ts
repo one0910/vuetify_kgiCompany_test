@@ -191,6 +191,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
         ctx.drawImage(img, 0, 0);
 
+        const clickableRects: { x: number; y: number; width: number; height: number; xy: string }[] = [];
 
         if (stage.value !== 'preview') {
           const highlights = (doc.signature || []).map(sig => ({
@@ -205,6 +206,9 @@ export const useInsureanceStore = defineStore('insureance', () => {
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width, height);
 
+            // ✅ 儲存可點擊區域
+            clickableRects.push({ x, y, width, height, xy });
+
             const signImg = new Image();
             signImg.src = signimg;
             signImg.onload = () => {
@@ -214,17 +218,25 @@ export const useInsureanceStore = defineStore('insureance', () => {
             };
           });
         }
-
-        canvas.addEventListener('mousemove', (event) => {
-          const rect = canvas.getBoundingClientRect(); // 取得畫布相對位置
+        // ✅ 加入 click 事件判斷
+        canvas.addEventListener('click', (event) => {
+          const rect = canvas.getBoundingClientRect();
           const scaleX = canvas.width / rect.width;
           const scaleY = canvas.height / rect.height;
 
           const mouseX = (event.clientX - rect.left) * scaleX;
           const mouseY = (event.clientY - rect.top) * scaleY;
 
-          // console.log(`🖱️ 滑鼠在 canvas 座標: (${mouseX.toFixed(2)}, ${mouseY.toFixed(2)})`);
+          const clicked = clickableRects.find(({ x, y, width, height }) =>
+            mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
+          );
+          console.log(`clicked => `, clicked)
+
+          if (clicked) {
+            alert(`xy: ${clicked.xy}`);
+          }
         });
+
         resolve(canvas); // ✅ 回傳 canvas
 
       };

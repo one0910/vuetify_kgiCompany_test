@@ -6,7 +6,7 @@ import SwitchSideBarRead from '@/components/signature/SwitchSideBar-Read.vue';
 import SwitchSideBarSign from '@/components/signature/SwitchSideBar-Sign2.vue';
 import SignaturedNavbar from '@/components/signature/SignaturedNavbar2.vue';
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
-
+import SignaturePad from '@/components/signature/SignaturePad.vue';
 const store = useInsureanceStore();
 const router = useRouter();
 const scrollContainerRef = ref(null);
@@ -172,10 +172,19 @@ watch(
             size="x-large"
             width="250"
             class="bg-blue-darken-4"
+            :class="{ 'custom-disabled-btn': !store.enableNextButton }"
             :disabled="!store.enableNextButton"
             @click="nextStep"
             >下一步
           </v-btn>
+          <SignaturePad @confirm="(img) => (signature = img)" water-mark="同意投保">
+            <button>TEST</button>
+
+            <template #prepend>
+              <h1>標題</h1>
+              <p>說明</p>
+            </template>
+          </SignaturePad>
         </v-layout>
       </v-col>
     </v-row>
@@ -203,5 +212,12 @@ watch(
   text-align: center;
   font-size: 1rem;
   letter-spacing: 1px;
+}
+
+.custom-disabled-btn {
+  background-color: #c4c4c4 !important;
+  color: #333 !important;
+  pointer-events: none;
+  border: 1px solid #c4c4c4;
 }
 </style>

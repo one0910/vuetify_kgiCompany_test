@@ -1,9 +1,6 @@
 <script lang="ts" setup>
-import {
-  VueSignaturePad,
-  type Signature,
-} from "@selemondev/vue3-signature-pad";
-import { onBeforeUnmount, onMounted, ref, computed } from "vue";
+import { VueSignaturePad, type Signature } from '@selemondev/vue3-signature-pad';
+import { onBeforeUnmount, onMounted, ref, computed } from 'vue';
 
 /*
 使用範例：
@@ -27,30 +24,27 @@ interface Props {
 defineProps<Props>();
 
 interface Emits {
-  (event: "confirm", signature: string): void;
+  (event: 'confirm', signature: string): void;
 }
 const emit = defineEmits<Emits>();
 
-const isShowModel = defineModel<boolean>("show", {
+const isShowModel = defineModel<boolean>('show', {
   required: false,
-  default: undefined,
+  default: undefined
 });
 console.log(isShowModel.value);
 
 const isShowDefault = ref(false);
 
 const isShow = computed({
-  get: () =>
-    typeof isShowModel.value === "boolean"
-      ? isShowModel.value
-      : isShowDefault.value,
+  get: () => (typeof isShowModel.value === 'boolean' ? isShowModel.value : isShowDefault.value),
   set: (value) => {
-    if (typeof isShowModel.value === "boolean") {
+    if (typeof isShowModel.value === 'boolean') {
       isShowModel.value = value;
     } else {
       isShowDefault.value = value;
     }
-  },
+  }
 });
 
 const signatureRef = ref<Signature>(null!);
@@ -63,7 +57,7 @@ const clear = () => {
 // 確認按鈕
 const confirm = () => {
   const signature = signatureRef.value?.saveSignature();
-  emit("confirm", signature);
+  emit('confirm', signature);
   isShowDefault.value = false;
 };
 
@@ -75,11 +69,11 @@ const onKeydown = (e: KeyboardEvent) => {
     return;
   }
   switch (e.key) {
-    case "Control":
+    case 'Control':
       isControlPressed = true;
       break;
     // 壓著ctrl的狀態下按z上一步
-    case "z":
+    case 'z':
       if (isControlPressed) {
         signatureRef.value?.undo();
       }
@@ -87,19 +81,19 @@ const onKeydown = (e: KeyboardEvent) => {
 };
 // 監聽ctrl鍵有沒有被鬆開
 const onKeyup = (e: KeyboardEvent) => {
-  if (e.key === "Control") {
+  if (e.key === 'Control') {
     isControlPressed = false;
   }
 };
 
 onMounted(() => {
-  document.addEventListener("keydown", onKeydown);
-  document.addEventListener("keyup", onKeyup);
+  document.addEventListener('keydown', onKeydown);
+  document.addEventListener('keyup', onKeyup);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onKeydown);
-  document.removeEventListener("keyup", onKeyup);
+  document.removeEventListener('keydown', onKeydown);
+  document.removeEventListener('keyup', onKeyup);
 });
 </script>
 
@@ -124,11 +118,11 @@ onBeforeUnmount(() => {
               ref="signatureRef"
               width="894px"
               height="250px"
-              :min-width="1"
-              :max-width="1"
+              :min-width="6"
+              :max-width="10"
               :options="{
                 penColor: 'black',
-                backgroundColor: '#F2F6FF',
+                backgroundColor: 'rgba(242, 246, 255, 0.6)'
               }"
             ></vue-signature-pad>
             <div
@@ -141,9 +135,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="d-flex justify-end mt-6">
-            <a @click="clear" class="highlight cursor-pointer"
-              >清除資料重新填寫</a
-            >
+            <a @click="clear" class="highlight cursor-pointer">清除資料重新填寫</a>
           </div>
         </div>
 

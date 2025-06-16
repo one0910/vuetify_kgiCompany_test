@@ -19,6 +19,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
   const navbarHeight = ref<number>(0)
   const signatureRoleType = ref<any[]>([])
+  const openSignaturePadModal = ref<boolean>(false)
+  const currectClickSign = ref({ pageIndex: 0, sigIndex: 0 })
 
 
   //是否啟用下一步的按鈕
@@ -101,7 +103,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const roleMap = new Map<number, Record<number, { sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
 
     for (const doc of insureanceData.value) {
-      console.log(`doc.pageHeight => `, doc.pageHeight)
       const pageIndex = doc.pageIndex;
       for (const sig of doc.signature || []) {
         const type = parseInt(sig.type);
@@ -191,34 +192,41 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
         ctx.drawImage(img, 0, 0);
 
-        const clickableRects: { x: number; y: number; width: number; height: number; xy: string }[] = [];
+        const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number } }[] = [];
 
         if (stage.value !== 'preview') {
-          const highlights = (doc.signature || []).map(sig => ({
-            xy: sig.xy,
-            signimg: sig.signimg,
-            color: (sig.signimg) ? 'rgba(242, 246, 255, 0.5' : '#eb949459'
-          }));
+          const highlights = (doc.signature || []).map(sig => {
+            return {
+              xy: sig.xy,
+              signimg: sig.signimg,
+              color: (sig.signimg) ? 'rgba(242, 246, 255, 0.5)' : '#eb949459',
+              index: {
+                pageIndex: doc.pageIndex,
+                sigIndex: sig.sigIndex
+              }
+            }
+          });
 
           // 畫框
-          highlights.forEach(({ xy, color, signimg }) => {
+          highlights.forEach(({ xy, color, signimg, index }) => {
             const [x, y, width, height] = xy.split(',').map(Number);
             ctx.fillStyle = color;
             ctx.fillRect(x, y, width, height);
 
             // ✅ 儲存可點擊區域
-            clickableRects.push({ x, y, width, height, xy });
+            clickableRects.push({ x, y, width, height, xy, index });
 
             const signImg = new Image();
             signImg.src = signimg;
             signImg.onload = () => {
               ctx.drawImage(signImg, x, y, width, height);
-              ctx.fillStyle = color;
-              ctx.fillRect(x, y, width, height);
+              //簽完名後，在背景上色
+              // ctx.fillStyle = color;
+              // ctx.fillRect(x, y, width, height);
             };
           });
         }
-        // ✅ 加入 click 事件判斷
+        // ✅ 座標定位click
         canvas.addEventListener('click', (event) => {
           const rect = canvas.getBoundingClientRect();
           const scaleX = canvas.width / rect.width;
@@ -227,13 +235,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const mouseX = (event.clientX - rect.left) * scaleX;
           const mouseY = (event.clientY - rect.top) * scaleY;
 
-          const clicked = clickableRects.find(({ x, y, width, height }) =>
+          const clicked = clickableRects.find(({ x, y, width, height, index }) =>
             mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
           );
-          console.log(`clicked => `, clicked)
 
           if (clicked) {
-            alert(`xy: ${clicked.xy}`);
+            openSignaturePadModal.value = true
+            currectClickSign.value = clicked.index
           }
         });
 
@@ -422,6 +430,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     insureanceData,
     currentPage,
     currentRole,
+    currectClickSign,
     originalStatusMap,
     switchPage,
     skipToSignPosition,
@@ -438,6 +447,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     currentDocs,
     fetchInsureanceDocs,
     signatureRoleType,
-    checkRoleSignAll
+    checkRoleSignAll,
+    openSignaturePadModal
   };
 });

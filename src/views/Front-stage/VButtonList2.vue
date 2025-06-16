@@ -52,6 +52,31 @@ function detectBottom(event) {
   });
 }
 
+async function signtureHandler(base64Img) {
+  const index = store.currectClickSign.pageIndex;
+  const roleIndex = store.currentRole.index;
+  const signatrueRole = store.signatureRoleType[roleIndex].pageData[index.toString()];
+  const currentDocIndex = signatrueRole.pageIndex;
+  const currentDocSigIndex = signatrueRole.sigIndex;
+
+  // 更新 base64
+  signatrueRole.signimg = base64Img;
+  store.currentDocs[currentDocIndex].signature[currentDocSigIndex].signimg = base64Img;
+  store.currentDocs[currentDocIndex].buttonStatus = 'signed';
+  store.signatureRoleType[roleIndex].buttonStatus[currentDocIndex] = 'signed';
+
+  // 檢查是否整個角色簽完
+  const isRoleAllSignCheck = await store.checkRoleSignAll(roleIndex);
+  if (isRoleAllSignCheck) {
+    store.signatureRoleType[roleIndex].allSignedComplete = true;
+  }
+
+  console.log(`index => `, index);
+  store.renderedCanvas.updateCanvasByIndex(index);
+
+  store.openSignaturePadModal = false;
+}
+
 function nextStep() {
   goToNextStage();
   tipBar.value = true;
@@ -114,6 +139,17 @@ watch(
 
 <template>
   <v-container fluid="">
+    <!-- 簽名畫板 -->
+    <SignaturePad
+      @confirm="signtureHandler"
+      water-mark="同意投保"
+      v-model:show="store.openSignaturePadModal"
+    >
+      <template #prepend>
+        <h1>標題</h1>
+        <p>說明</p>
+      </template>
+    </SignaturePad>
     <!-- 名稱列 & 頁數 -->
     <v-row>
       <v-col cols="1" class="pa-0 text-center align-self-center">
@@ -124,7 +160,7 @@ watch(
           <p class="text-grey-darken-3">要保人同意書</p>
           <div class="d-flex">
             <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
-            <button @click="showFakeSign = !showFakeSign">顯示簽名</button>
+            <!-- <button @click="showFakeSign = !showFakeSign">顯示簽名</button> -->
           </div>
         </div>
       </v-col>
@@ -177,14 +213,6 @@ watch(
             @click="nextStep"
             >下一步
           </v-btn>
-          <SignaturePad @confirm="(img) => (signature = img)" water-mark="同意投保">
-            <button>TEST</button>
-
-            <template #prepend>
-              <h1>標題</h1>
-              <p>說明</p>
-            </template>
-          </SignaturePad>
         </v-layout>
       </v-col>
     </v-row>

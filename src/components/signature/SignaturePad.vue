@@ -122,7 +122,7 @@ onBeforeUnmount(() => {
               :max-width="10"
               :options="{
                 penColor: 'black',
-                backgroundColor: 'rgba(242, 246, 255, 0.6)'
+                backgroundColor: 'rgba(242, 246, 255, 1)'
               }"
             ></vue-signature-pad>
             <div

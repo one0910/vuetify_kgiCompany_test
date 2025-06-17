@@ -20,7 +20,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const navbarHeight = ref<number>(0)
   const signatureRoleType = ref<any[]>([])
   const openSignaturePadModal = ref<boolean>(false)
-  const currectClickSign = ref({ pageIndex: 0, sigIndex: 0 })
+  const currectClickSign = ref({ pageIndex: 0, sigIndex: 0, type: 0 })
 
 
   //是否啟用下一步的按鈕
@@ -154,6 +154,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     signatureRoleType.value = result;
   }
 
+  //角色切換
   function switchRoleToButton(index: number) {
     const docs = currentDocs.value;
     const role = signatureRoleType.value[index];
@@ -162,6 +163,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
     role.buttonStatus.forEach((status, pageIndex) => {
       if (docs[pageIndex]) {
         docs[pageIndex].buttonStatus = status;
+      }
+
+      //重新render canvas，因為只有切換到該角色時，未簽名位置才會顯示粉紅背景框
+      if (!renderedCanvas.value) {
+        return
+      } else {
+        renderedCanvas.value.updateCanvasByIndex(pageIndex)
       }
     });
   }
@@ -192,17 +200,18 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
         ctx.drawImage(img, 0, 0);
 
-        const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number } }[] = [];
+        const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
 
         if (stage.value !== 'preview') {
           const highlights = (doc.signature || []).map(sig => {
             return {
               xy: sig.xy,
               signimg: sig.signimg,
-              color: (sig.signimg) ? 'rgba(242, 246, 255, 0.5)' : '#eb949459',
+              color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
               index: {
                 pageIndex: doc.pageIndex,
-                sigIndex: sig.sigIndex
+                sigIndex: sig.sigIndex,
+                type: sig.type
               }
             }
           });
@@ -210,8 +219,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
           // 畫框
           highlights.forEach(({ xy, color, signimg, index }) => {
             const [x, y, width, height] = xy.split(',').map(Number);
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, width, height);
+            if (index.type === currentRole.value.type) {
+              ctx.fillStyle = color;
+              ctx.fillRect(x, y, width, height);
+            }
 
             // ✅ 儲存可點擊區域
             clickableRects.push({ x, y, width, height, xy, index });
@@ -238,10 +249,15 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const clicked = clickableRects.find(({ x, y, width, height, index }) =>
             mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
           );
+          // console.log(`clicked.index => `, clicked.index)
 
-          if (clicked) {
+
+          if (!clicked) return
+          if (clicked.index.type === currentRole.value.type) {
             openSignaturePadModal.value = true
             currectClickSign.value = clicked.index
+          } else if (clicked.index.type !== currentRole.value.type) {
+            alert(`請切換至${typeMapRole[clicked.index.type]}`);
           }
         });
 

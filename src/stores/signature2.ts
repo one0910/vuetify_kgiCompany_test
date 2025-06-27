@@ -6,7 +6,7 @@ import { typeMapRole } from '@/utility/roleMap';
 
 
 export const useInsureanceStore = defineStore('insureance', () => {
-  type Stage = 'preview' | 'sign1' | 'sign2';
+  type Stage = 'signTypeSelect' | 'signType_paper' | 'preview' | 'sign1' | 'sign2';
   type SignStatus = 'unselected' | 'unsigned' | 'signed';
   const insureanceData = ref<any[]>([]);
   const stage = ref<Stage>('preview');
@@ -182,6 +182,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   function setCanvseViewer(canvasViewerRef: any) {
     renderedCanvas.value = canvasViewerRef
+  }
+
+  function removeAllSignature(params: type) {
+
   }
 
 

@@ -20,13 +20,16 @@ water-mark傳了才會有浮水印
 
 interface Props {
   waterMark?: string;
+  width?: number;
+  height?: number;
 }
-defineProps<Props>();
+const props = defineProps<Props>();
 
 interface Emits {
   (event: 'confirm', signature: string): void;
 }
 const emit = defineEmits<Emits>();
+console.log(`props => `, props);
 
 const isShowModel = defineModel<boolean>('show', {
   required: false,
@@ -79,6 +82,23 @@ const onKeydown = (e: KeyboardEvent) => {
       }
   }
 };
+
+const MAX_WIDTH = 894;
+
+const computedDimensions = computed(() => {
+  const originalWidth = props.width || MAX_WIDTH;
+  const originalHeight = props.height || 250;
+
+  const ratio = originalHeight / originalWidth;
+  const finalWidth = MAX_WIDTH;
+  const finalHeight = finalWidth * ratio;
+
+  return {
+    width: Math.round(finalWidth),
+    height: Math.round(finalHeight)
+  };
+});
+
 // 監聽ctrl鍵有沒有被鬆開
 const onKeyup = (e: KeyboardEvent) => {
   if (e.key === 'Control') {
@@ -113,11 +133,11 @@ onBeforeUnmount(() => {
         <div>
           <slot name="prepend" />
 
-          <div class="position-relative">
+          <div class="position-relative signPadCantainer">
             <vue-signature-pad
               ref="signatureRef"
-              width="894px"
-              height="250px"
+              :width="`${computedDimensions.width}px`"
+              :height="`${computedDimensions.height}px`"
               :min-width="6"
               :max-width="10"
               :options="{
@@ -156,6 +176,24 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+.signPadCantainer {
+  margin: auto;
+  width: fit-content;
+  max-width: 100%;
+
+  &:deep(div) {
+    max-width: 100%;
+  }
+}
+/* .signCantainer :deep(div) {
+  max-width: 100%;
+} */
+
+.signature-box {
+  margin: auto !important;
+  display: block;
+}
+
 .card {
   .highlight {
     color: #0044ad;

@@ -20,7 +20,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const navbarHeight = ref<number>(0)
   const signatureRoleType = ref<any[]>([])
   const openSignaturePadModal = ref<boolean>(false)
-  const currectClickSign = ref({ pageIndex: 0, sigIndex: 0, type: 0 })
+  const currectClickSign = ref({ width: 0, height: 0, pageIndex: 0, sigIndex: 0, type: 0 })
 
 
   //是否啟用下一步的按鈕
@@ -253,13 +253,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const clicked = clickableRects.find(({ x, y, width, height, index }) =>
             mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
           );
-          // console.log(`clicked.index => `, clicked.index)
+          console.log(`clicked => `, clicked)
 
 
           if (!clicked) return
           if (clicked.index.type === currentRole.value.type) {
+            currectClickSign.value = { ...clicked.index, width: clicked.width, height: clicked.height }
             openSignaturePadModal.value = true
-            currectClickSign.value = clicked.index
           } else if (clicked.index.type !== currentRole.value.type) {
             alert(`請切換至${typeMapRole[clicked.index.type]}`);
           }

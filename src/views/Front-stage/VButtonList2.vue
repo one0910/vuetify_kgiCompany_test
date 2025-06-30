@@ -7,6 +7,7 @@ import SwitchSideBarSign from '@/components/signature/SwitchSideBar-Sign2.vue';
 import SignaturedNavbar from '@/components/signature/SignaturedNavbar2.vue';
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
 import SignaturePad from '@/components/signature/SignaturePad.vue';
+
 const store = useInsureanceStore();
 const router = useRouter();
 const scrollContainerRef = ref(null);
@@ -136,13 +137,14 @@ watch(
   }
 );
 </script>
-
 <template>
   <v-container fluid="">
     <!-- 簽名畫板 -->
     <SignaturePad
       @confirm="signtureHandler"
       water-mark="同意投保"
+      :height="store.currectClickSign.height"
+      :width="store.currectClickSign.width"
       v-model:show="store.openSignaturePadModal"
     >
       <template #prepend>

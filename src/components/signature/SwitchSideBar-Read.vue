@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useInsureanceStore } from '@/stores/signature';
+import { formatIndex } from '@/utility/transform';
 
 const store = useInsureanceStore();
 
@@ -40,7 +41,7 @@ const currentPage = computed(() => store.currentPage);
               class="pl-3 text-subtitle-1"
               :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
             >
-              0{{ index + 1 }}
+              {{ formatIndex(index) }}
             </v-list-item-subtitle>
           </div>
         </template>

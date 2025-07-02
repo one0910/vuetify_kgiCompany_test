@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
+import Insureance2 from '@/mocks/Insureance2.json'
+import Insureance3 from '@/mocks/Insureance3.json'
 
 
 
@@ -40,10 +42,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
   // 後端傳來的資料做好整理後放至insureanceData
   async function fetchInsureanceDocs() {
     const data = await getSignatureDoc();
+    const data2 = Insureance2.data.overPrints[0]
+    const data3 = Insureance3.data.overPrints[0]
     originalStatusMap.value = {};
-    if (!data) return;
+    if (!data2) return;
 
-    const { form, sign } = data;
+    const { form, sign } = data2;
+    console.log(`data2 => `, data2)
 
     // 將 sign 根據 form 分組
     const groupedSignatures = sign.reduce((acc: Record<string, any[]>, sig) => {
@@ -61,13 +66,15 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // 將 form 結合對應的 signature
     const transformedData = await Promise.all(
       form.map(async (item, index) => {
-        const documentHeight = await getImageHeight(item.docSource);
+        // const documentHeight = await getImageHeight(item.docSource);
+        const documentHeight = 2335;
         originalStatusMap.value[index] = {
           status: 'unselected',
           type: 9
         }
         return {
           ...item,
+          docSource: `data:image/png;base64,${item.docSource}`,
           pageIndex: index,
           signature: groupedSignatures[item.form] || [],
           pageHeight: 0,
@@ -191,6 +198,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
+    console.log(` base64=> `, base64)
 
     return new Promise((resolve, reject) => {
       const img = new Image();

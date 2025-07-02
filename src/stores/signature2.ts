@@ -207,40 +207,40 @@ export const useInsureanceStore = defineStore('insureance', () => {
         const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
 
         if (stage.value !== 'preview') {
-          const highlights = (doc.signature || []).map(sig => {
-            return {
-              xy: sig.xy,
-              signimg: sig.signimg,
-              color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
-              index: {
-                pageIndex: doc.pageIndex,
-                sigIndex: sig.sigIndex,
-                type: sig.type
-              }
-            }
-          });
-
-          // 畫框
-          highlights.forEach(({ xy, color, signimg, index }) => {
-            const [x, y, width, height] = xy.split(',').map(Number);
-            if (index.type === currentRole.value.type) {
-              ctx.fillStyle = color;
-              ctx.fillRect(x, y, width, height);
-            }
-
-            // ✅ 儲存可點擊區域
-            clickableRects.push({ x, y, width, height, xy, index });
-
-            const signImg = new Image();
-            signImg.src = signimg;
-            signImg.onload = () => {
-              ctx.drawImage(signImg, x, y, width, height);
-              //簽完名後，在背景上色
-              // ctx.fillStyle = color;
-              // ctx.fillRect(x, y, width, height);
-            };
-          });
         }
+        const highlights = (doc.signature || []).map(sig => {
+          return {
+            xy: sig.xy,
+            signimg: sig.signimg,
+            color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
+            index: {
+              pageIndex: doc.pageIndex,
+              sigIndex: sig.sigIndex,
+              type: sig.type
+            }
+          }
+        });
+
+        // 畫框
+        highlights.forEach(({ xy, color, signimg, index }) => {
+          const [x, y, width, height] = xy.split(',').map(Number);
+          if (index.type === currentRole.value.type) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width, height);
+          }
+
+          // ✅ 儲存可點擊區域
+          clickableRects.push({ x, y, width, height, xy, index });
+
+          const signImg = new Image();
+          signImg.src = signimg;
+          signImg.onload = () => {
+            ctx.drawImage(signImg, x, y, width, height);
+            //簽完名後，在背景上色
+            // ctx.fillStyle = color;
+            // ctx.fillRect(x, y, width, height);
+          };
+        });
         // ✅ 座標定位click
         canvas.addEventListener('click', (event) => {
           const rect = canvas.getBoundingClientRect();

@@ -10,7 +10,7 @@ function switchRoleHandler({ type }, buttonIndex) {
   store.currentRole = { index: buttonIndex, type };
   console.log(`store.currentRole => `, store.currentRole);
   store.switchRoleToButton(buttonIndex);
-  store.skipToSignPosition('0', 'button');
+  store.skipToSignPsisosition('0', 'button');
   // store.skipToSignPosition(buttonIndex[0], 'role');
 }
 
@@ -36,7 +36,7 @@ watch(
 <template>
   <v-sheet
     class="py-1"
-    :class="[store.stage === 'preview' ? 'd-none' : 'd-flex']"
+    :class="[store.stage === 'preview' ? 'd-flex' : 'd-flex']"
     style="background-color: rgba(0, 0, 0, 0.8)"
     ref="navbarRef"
   >

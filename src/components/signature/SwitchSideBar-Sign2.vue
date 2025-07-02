@@ -1,4 +1,4 @@
-<script setup>
+<script lang="ts" setup>
 import { computed, onMounted, ref, toRefs, watch } from 'vue';
 import { useInsureanceStore } from '@/stores/signature2';
 import { formatIndex } from '@/utility/transform';
@@ -7,10 +7,31 @@ const store = useInsureanceStore();
 const currentPage = computed(() => store.currentPage);
 const props = defineProps(['showFakeSign']);
 const scrollSheetRef = ref(null);
+const itemRefs = ref<HTMLElement[]>([]);
 const { showFakeSign } = toRefs(props);
+
+function setItemRef(index: number) {
+  return (el: HTMLElement | null) => {
+    if (el) itemRefs.value[index] = el;
+  };
+}
+
+function sidebarScrollTo(currentPage: number) {
+  const container = scrollSheetRef.value?.$el;
+  const targetHeight = itemRefs.value[currentPage].offsetHeight * currentPage;
+  const targetTop = itemRefs.value[currentPage].offsetTop * currentPage;
+  // 滾動到對應 item 元素
+  if (container) {
+    container.scrollTo({
+      top: targetHeight - targetTop,
+      behavior: 'auto'
+    });
+  }
+}
 
 function skipHandler({ buttonStatus }, index) {
   store.currentPage = index;
+
   if (buttonStatus !== 'unselected') {
     store.skipToSignPosition(index.toString(), 'button');
   } else {
@@ -18,16 +39,18 @@ function skipHandler({ buttonStatus }, index) {
   }
 }
 
-onMounted(() => {
-  // 初始化時 log 出 scrollTop
-  // console.log(`scrollSheetRef.value?.$e => `, scrollSheetRef.value?.$e.scrollTop);
-});
-
 // 或你可以寫個函數測量 scrollTop
-// function logScrollTop() {
-//   const el = scrollSheetRef.value?.$el;
-//   console.log('目前 scrollTop:', el.scrollTop);
-// }
+function logScrollTop() {
+  const el = scrollSheetRef.value?.$el;
+  console.log('目前 scrollTop:', el.scrollTop);
+}
+
+watch(
+  () => store.currentPage,
+  (currentPage) => {
+    sidebarScrollTo(currentPage);
+  }
+);
 </script>
 
 <template>
@@ -43,6 +66,7 @@ onMounted(() => {
           <div
             class="d-flex justify-center align-center cursor-pointer"
             @click="skipHandler(item, index)"
+            :ref="setItemRef(index)"
           >
             <v-avatar
               size="32"

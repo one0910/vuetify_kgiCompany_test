@@ -14,7 +14,9 @@
     "@selemondev/vue3-signature-pad": "^1.4.0",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
+    "geotiff": "^2.1.4-beta.0",
     "pinia": "^2.1.7",
+    "utif": "^1.1.0",
     "vue": "^3.4.21",
     "vue-router": "^4.2.5"
   },

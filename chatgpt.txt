@@ -1,166 +1,132 @@
-那依我現在的程式碼, 我有辦法去測量我目前<v-sheet height="450" class="bgPrimaryColor overflow-y-auto scrollbar"> 的scrollTop的高度嗎?
+這是我下面的程式碼, 你幫我看一下renderInsureanceDoc的地方,我透過UTIF來解我後端送過來的base64/tiff檔,並把它塞到canvas裡
+如果就如圖所示,內容出現變型扭曲,我在猜有可能是rgba的地方設置有問題,要怎麼處理
+
+  async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
+    const base64 = doc.docSource;
+    const base64Data = doc.docSource.replace(/^data:image\/png;base64,/, '');
+    // renderTiffToCanvas(base64)
 
 
-<script setup>
-import { computed, onMounted, toRefs, watch } from 'vue';
-import { useInsureanceStore } from '@/stores/signature2';
-import { formatIndex } from '@/utility/transform';
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
 
-const store = useInsureanceStore();
-const currentPage = computed(() => store.currentPage);
-const props = defineProps(['showFakeSign']);
-const { showFakeSign } = toRefs(props);
 
-function skipHandler({ buttonStatus }, index) {
-  store.currentPage = index;
-  if (buttonStatus !== 'unselected') {
-    store.skipToSignPosition(index.toString(), 'button');
-  } else {
-    store.scrollToPage(index);
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+
+        // 移除 MIME 類型前綴並解碼 Base64
+        const base64Data = base64.replace(/^data:image\/tiff;base64,/, '');
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // 使用 UTIF.js 解碼 TIFF
+        const ifds = UTIF.decode(bytes.buffer);
+        const rgba = UTIF.toRGBA8(ifds[0]);
+        const width = ifds[0].width;
+        const height = ifds[0].height;
+  
+        
+        const expectedLength = width * height * 4;
+        if (rgba.length !== expectedLength) {
+          console.error(`⚠️ RGBA 長度錯誤: ${rgba.length} !== ${expectedLength}`);
+          return reject(new Error('❌ TIFF RGBA 長度與尺寸不符'));
+        }
+        
+        // 設置 Canvas 尺寸
+        canvas.width = width;
+        canvas.height = height;
+        // 將 RGBA 數據渲染到 Canvas
+        const imageData = ctx.createImageData(width, height);
+
+        imageData.data.set(rgba);
+        ctx.putImageData(imageData, 0, 0);
+
+      }
+      // canvas.width = width;
+      // canvas.height = height;
+      resolve(canvas)
+
+      // img.onload = () => {
+
+
+      //   const ctx = canvas.getContext('2d');
+      //   if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
+      //   ctx.drawImage(img, 0, 0);
+
+      //   const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
+
+      //   if (stage.value !== 'preview') {
+      //   }
+      //   const highlights = (doc.signature || []).map(sig => {
+      //     return {
+      //       xy: sig.xy,
+      //       signimg: sig.signimg,
+      //       color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
+      //       index: {
+      //         pageIndex: doc.pageIndex,
+      //         sigIndex: sig.sigIndex,
+      //         type: sig.type
+      //       }
+      //     }
+      //   });
+
+      //   // 畫框
+      //   highlights.forEach(({ xy, color, signimg, index }) => {
+      //     const [x, y, width, height] = xy.split(',').map(Number);
+      //     if (index.type === currentRole.value.type) {
+      //       ctx.fillStyle = color;
+      //       ctx.fillRect(x, y, width, height);
+      //     }
+
+      //     // ✅ 儲存可點擊區域
+      //     clickableRects.push({ x, y, width, height, xy, index });
+
+      //     const signImg = new Image();
+      //     signImg.src = signimg;
+      //     signImg.onload = () => {
+      //       ctx.drawImage(signImg, x, y, width, height);
+      //       //簽完名後，在背景上色
+      //       // ctx.fillStyle = color;
+      //       // ctx.fillRect(x, y, width, height);
+      //     };
+      //   });
+      //   // ✅ 座標定位click
+      //   canvas.addEventListener('click', (event) => {
+      //     const rect = canvas.getBoundingClientRect();
+      //     const scaleX = canvas.width / rect.width;
+      //     const scaleY = canvas.height / rect.height;
+
+      //     const mouseX = (event.clientX - rect.left) * scaleX;
+      //     const mouseY = (event.clientY - rect.top) * scaleY;
+
+      //     const clicked = clickableRects.find(({ x, y, width, height, index }) =>
+      //       mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
+      //     );
+      //     console.log(`clicked => `, clicked)
+
+
+      //     if (!clicked) return
+      //     if (clicked.index.type === currentRole.value.type) {
+      //       currectClickSign.value = { ...clicked.index, width: clicked.width, height: clicked.height }
+      //       openSignaturePadModal.value = true
+      //     } else if (clicked.index.type !== currentRole.value.type) {
+      //       alert(`請切換至${typeMapRole[clicked.index.type]}`);
+      //     }
+      //   });
+
+      //   resolve(canvas); // ✅ 回傳 canvas
+
+      // };
+      // img.onerror = (err) => reject(err);
+    });
   }
-}
-</script>
-
-<template>
-  <v-sheet height="450" class="bgPrimaryColor overflow-y-auto scrollbar">
-    <v-list class="bgPrimaryColor">
-      <v-list-item v-for="(item, index) in store.currentDocs" :key="index" tag="div" class="px-0">
-        <template v-slot>
-          <div
-            class="d-flex justify-center align-center cursor-pointer"
-            @click="skipHandler(item, index)"
-          >
-            <v-avatar
-              size="32"
-              class="pa-3"
-              :class="[
-                index === currentPage ? 'border-active' : 'border-inactive',
-                item.buttonStatus === 'signed'
-                  ? 'bg-green'
-                  : item.buttonStatus === 'unsigned'
-                    ? 'bg-red'
-                    : 'bg-transparent'
-              ]"
-            >
-              <v-icon
-                color="white"
-                size="15"
-                :icon="
-                  item.buttonStatus === 'signed'
-                    ? 'mdi-check'
-                    : item.buttonStatus === 'unsigned'
-                      ? 'mdi-pencil-outline'
-                      : ''
-                "
-              />
-            </v-avatar>
-
-            <v-list-item-subtitle
-              class="pl-3 text-subtitle-1"
-              :class="index === currentPage ? 'text-blue-darken-4 font-weight-bold' : 'text-grey'"
-            >
-              {{ formatIndex(index) }}
-            </v-list-item-subtitle>
-          </div>
-        </template>
-      </v-list-item>
-    </v-list>
-  </v-sheet>
-
-  <v-sheet
-    class="d-flex flex-column mt-3 align-center bgPrimaryColor position-relative"
-    height="120"
-  >
-    <div class="boxshadow"></div>
-    <!-- 往上一個箭頭 -->
-    <v-avatar
-      color="white"
-      size="54"
-      class="mb-auto border-md"
-      @click="store.switchSignButton({ type: 'last' })"
-    >
-      <v-icon icon="mdi-arrow-up"></v-icon>
-    </v-avatar>
-
-    <!-- 往下一個箭頭 -->
-    <v-avatar
-      color="white"
-      size="54"
-      class="border-md"
-      @click="store.switchSignButton({ type: 'next' })"
-    >
-      <v-icon icon="mdi-arrow-down"></v-icon>
-    </v-avatar>
-  </v-sheet>
-</template>
-
-<style lang="scss" scoped>
-.bgPrimaryColor {
-  background-color: #f2f6ff;
-}
-
-.step--completed {
-  border: 2px solid rgba(var(--v-theme-primary), 1);
-}
-
-.step--editing {
-  border: 2px solid rgba(var(--v-theme-secondary), 1);
-}
-
-.border-active {
-  border: 3px solid #1e88e5; // Vuetify 的 blue-darken-2
-}
-
-.border-inactive {
-  border: 2px solid #ccc;
-  /* background-color: #f00; */
-}
-
-.border-none {
-  border: none;
-}
-
-.text-grey {
-  color: #aaa; // 或 Vuetify 色階 grey-darken-1
-}
-
-.boxshadow {
-  position: absolute;
-  bottom: 100%;
-  /* background: #f00; */
-  height: 35px;
-  width: 100%;
-  &::after {
-    content: '';
-    display: inline-block;
-    color: #000;
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 10%;
-    z-index: 3;
-    box-shadow: inset 3px 26px 25px 2px #f2f6ff;
-  }
-  /* display: none; */
-}
-
-.scrollbar {
-  /* &::-webkit-scrollbar {
-    width: 6px; // Scroll bar 寬度
-  }
-  &::-webkit-scrollbar-track {
-    background: #e0e0e0; // 滾動軌道背景
-    border-radius: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: #4a90e2; // 滑塊顏色
-    border-radius: 6px;
-    border: 2px solid #e0e0e0; // 內邊界讓滑塊更明顯
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background-color: #357ab7; // 滑鼠 hover 時顏色
-  } */
-}
-</style>

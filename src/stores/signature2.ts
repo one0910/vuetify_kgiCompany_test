@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { getSignatureDoc } from '@/service/documentSignature';
-import { typeMapRole } from '@/utility/roleMap';
+import { fromArrayBuffer } from 'geotiff'
+import { typeMapRole } from '@/utility/roleMap'
+import * as UTIF from 'utif';
+
 import Insureance2 from '@/mocks/Insureance2.json'
 import Insureance3 from '@/mocks/Insureance3.json'
 
@@ -45,10 +48,10 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const data2 = Insureance2.data.overPrints[0]
     const data3 = Insureance3.data.overPrints[0]
     originalStatusMap.value = {};
-    if (!data2) return;
+    if (!data3) return;
 
-    const { form, sign } = data2;
-    console.log(`data2 => `, data2)
+    const { form, sign } = data3;
+    console.log(`data3 => `, data3)
 
     // 將 sign 根據 form 分組
     const groupedSignatures = sign.reduce((acc: Record<string, any[]>, sig) => {
@@ -74,7 +77,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         }
         return {
           ...item,
-          docSource: `data:image/png;base64,${item.docSource}`,
+          docSource: `${item.docSource}`,
           pageIndex: index,
           signature: groupedSignatures[item.form] || [],
           pageHeight: 0,
@@ -195,90 +198,133 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   }
 
-
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
-    console.log(` base64=> `, base64)
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
 
     return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = base64;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+      const canvas = document.createElement('canvas');
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
-        ctx.drawImage(img, 0, 0);
+      // 移除 MIME 類型前綴並解碼 Base64
 
-        const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
+      const binaryString = atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
 
-        if (stage.value !== 'preview') {
-        }
-        const highlights = (doc.signature || []).map(sig => {
-          return {
-            xy: sig.xy,
-            signimg: sig.signimg,
-            color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
-            index: {
-              pageIndex: doc.pageIndex,
-              sigIndex: sig.sigIndex,
-              type: sig.type
-            }
-          }
-        });
-
-        // 畫框
-        highlights.forEach(({ xy, color, signimg, index }) => {
-          const [x, y, width, height] = xy.split(',').map(Number);
-          if (index.type === currentRole.value.type) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, width, height);
-          }
-
-          // ✅ 儲存可點擊區域
-          clickableRects.push({ x, y, width, height, xy, index });
-
-          const signImg = new Image();
-          signImg.src = signimg;
-          signImg.onload = () => {
-            ctx.drawImage(signImg, x, y, width, height);
-            //簽完名後，在背景上色
-            // ctx.fillStyle = color;
-            // ctx.fillRect(x, y, width, height);
-          };
-        });
-        // ✅ 座標定位click
-        canvas.addEventListener('click', (event) => {
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = canvas.width / rect.width;
-          const scaleY = canvas.height / rect.height;
-
-          const mouseX = (event.clientX - rect.left) * scaleX;
-          const mouseY = (event.clientY - rect.top) * scaleY;
-
-          const clicked = clickableRects.find(({ x, y, width, height, index }) =>
-            mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
-          );
-          console.log(`clicked => `, clicked)
+      // 使用 UTIF.js 解碼 TIFF
+      const ifds = UTIF.decode(bytes.buffer);
+      const rgba = UTIF.toRGBA8(ifds[0]);
+      const width = ifds[0].width;
+      const height = ifds[0].height;
 
 
-          if (!clicked) return
-          if (clicked.index.type === currentRole.value.type) {
-            currectClickSign.value = { ...clicked.index, width: clicked.width, height: clicked.height }
-            openSignaturePadModal.value = true
-          } else if (clicked.index.type !== currentRole.value.type) {
-            alert(`請切換至${typeMapRole[clicked.index.type]}`);
-          }
-        });
+      const expectedLength = width * height * 4;
+      if (rgba.length !== expectedLength) {
+        console.error(`⚠️ RGBA 長度錯誤: ${rgba.length} !== ${expectedLength}`);
+        return reject(new Error('❌ TIFF RGBA 長度與尺寸不符'));
+      }
 
-        resolve(canvas); // ✅ 回傳 canvas
+      // 設置 Canvas 尺寸
+      canvas.width = width;
+      canvas.height = height;
+      // 將 RGBA 數據渲染到 Canvas
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
+      const imageData = ctx.createImageData(width, height);
 
-      };
-      img.onerror = (err) => reject(err);
+      imageData.data.set(rgba);
+      ctx.putImageData(imageData, 0, 0);
+
+
+      // canvas.width = width;
+      // canvas.height = height;
+      resolve(canvas)
+
+      // img.onload = () => {
+
+
+      //   const ctx = canvas.getContext('2d');
+      //   if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
+      //   ctx.drawImage(img, 0, 0);
+
+      //   const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
+
+      //   if (stage.value !== 'preview') {
+      //   }
+      //   const highlights = (doc.signature || []).map(sig => {
+      //     return {
+      //       xy: sig.xy,
+      //       signimg: sig.signimg,
+      //       color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
+      //       index: {
+      //         pageIndex: doc.pageIndex,
+      //         sigIndex: sig.sigIndex,
+      //         type: sig.type
+      //       }
+      //     }
+      //   });
+
+      //   // 畫框
+      //   highlights.forEach(({ xy, color, signimg, index }) => {
+      //     const [x, y, width, height] = xy.split(',').map(Number);
+      //     if (index.type === currentRole.value.type) {
+      //       ctx.fillStyle = color;
+      //       ctx.fillRect(x, y, width, height);
+      //     }
+
+      //     // ✅ 儲存可點擊區域
+      //     clickableRects.push({ x, y, width, height, xy, index });
+
+      //     const signImg = new Image();
+      //     signImg.src = signimg;
+      //     signImg.onload = () => {
+      //       ctx.drawImage(signImg, x, y, width, height);
+      //       //簽完名後，在背景上色
+      //       // ctx.fillStyle = color;
+      //       // ctx.fillRect(x, y, width, height);
+      //     };
+      //   });
+      //   // ✅ 座標定位click
+      //   canvas.addEventListener('click', (event) => {
+      //     const rect = canvas.getBoundingClientRect();
+      //     const scaleX = canvas.width / rect.width;
+      //     const scaleY = canvas.height / rect.height;
+
+      //     const mouseX = (event.clientX - rect.left) * scaleX;
+      //     const mouseY = (event.clientY - rect.top) * scaleY;
+
+      //     const clicked = clickableRects.find(({ x, y, width, height, index }) =>
+      //       mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
+      //     );
+      //     console.log(`clicked => `, clicked)
+
+
+      //     if (!clicked) return
+      //     if (clicked.index.type === currentRole.value.type) {
+      //       currectClickSign.value = { ...clicked.index, width: clicked.width, height: clicked.height }
+      //       openSignaturePadModal.value = true
+      //     } else if (clicked.index.type !== currentRole.value.type) {
+      //       alert(`請切換至${typeMapRole[clicked.index.type]}`);
+      //     }
+      //   });
+
+      //   resolve(canvas); // ✅ 回傳 canvas
+
+      // };
+      // img.onerror = (err) => reject(err);
     });
   }
+
+
 
 
   //換頁籤切換功能
@@ -409,6 +455,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
           console.log(`⬅️ 切換角色至 index: ${lastKey}`);
         }
       }
+
     } else {
       currentPage.value = index;
     }

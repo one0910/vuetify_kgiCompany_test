@@ -23,8 +23,8 @@ const routes = [
     component: () => import('@/views/Front-stage/VButtonList2.vue')
   },
   {
-    path: '/insrueanceview',
-    component: () => import('@/views/Front-stage/InsrueanceView.vue')
+    path: '/vradio',
+    component: () => import('@/views/Front-stage/VRadio.vue')
   },
 ];
 

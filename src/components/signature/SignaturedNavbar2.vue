@@ -6,6 +6,19 @@ const store = useInsureanceStore();
 const { signatureRoleType, currentRole } = storeToRefs(store);
 const navbarRef = ref(null);
 
+const signRole = [
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名'
+];
+
 function switchRoleHandler({ type }, buttonIndex) {
   store.currentRole = { index: buttonIndex, type };
   console.log(`store.currentRole => `, store.currentRole);

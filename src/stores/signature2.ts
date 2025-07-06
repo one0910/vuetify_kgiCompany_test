@@ -191,7 +191,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
-
+    console.log(`doc => `, doc)
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = base64;
@@ -199,6 +199,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
+        console.log(`img.height => `, img.height)
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));

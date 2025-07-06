@@ -1,9 +1,6 @@
-下面是你提供的程式碼, 會出錯耶,如圖一所示,然後在v-if的地方,eslint也會報錯,如圖二所示,
-
 <script setup>
 import { ref, computed } from 'vue';
 
-// 題組資料（每組有標題與題目清單）
 const questionGroups = [
   {
     title: '1. 多元資產配置',
@@ -43,18 +40,26 @@ const questionGroups = [
   }
 ];
 
-// 初始化答案陣列
 const totalQuestions = questionGroups.reduce((sum, group) => sum + group.questions.length, 0);
 const answers = ref(Array(totalQuestions).fill(null));
 const others = ref('');
 
-// 工具函式：取得目前問題的全域 index
 const getGlobalIndex = (groupIndex, questionIndex) => {
   let offset = 0;
   for (let i = 0; i < groupIndex; i++) {
     offset += questionGroups[i].questions.length;
   }
   return offset + questionIndex;
+};
+
+const getVisibleQuestions = (group, groupIndex) => {
+  return group.questions.filter((question, qIndex) => {
+    if (question.dependsOn !== undefined) {
+      const dependsIndex = getGlobalIndex(groupIndex, question.dependsOn);
+      return answers.value[dependsIndex] === '是';
+    }
+    return true;
+  });
 };
 
 const submit = () => {
@@ -74,26 +79,18 @@ const submit = () => {
   <v-container>
     <v-form>
       <v-row v-for="(group, groupIndex) in questionGroups" :key="groupIndex" class="mb-6">
-        <!-- 題組標題 -->
         <v-col cols="12" class="font-weight-bold text-body-1 mb-2">
           {{ group.title }}
         </v-col>
 
-        <!-- 題組問題 -->
         <v-col
-          v-for="(question, qIndex) in group.questions"
+          v-for="(question, qIndex) in getVisibleQuestions(group, groupIndex)"
           :key="qIndex"
           cols="12"
-          v-if="
-            !question.dependsOn || answers[getGlobalIndex(groupIndex, question.dependsOn)] === '是'
-          "
           class="py-1 border-b align-center"
         >
           <v-row>
-            <!-- 題目文字 -->
             <v-col cols="6" class="text-body-1"> {{ qIndex + 1 }}. {{ question.text }} </v-col>
-
-            <!-- 是／否 選項 -->
             <v-col cols="6">
               <v-radio-group
                 v-model="answers[getGlobalIndex(groupIndex, qIndex)]"
@@ -110,14 +107,12 @@ const submit = () => {
         </v-col>
       </v-row>
 
-      <!-- 其他說明 -->
       <v-row class="mt-5">
         <v-col cols="12">
           <v-textarea label="6. 其他 (請說明)" v-model="others" rows="3" auto-grow outlined />
         </v-col>
       </v-row>
 
-      <!-- 送出按鈕 -->
       <v-row>
         <v-col cols="12" class="text-end">
           <v-btn color="primary" class="mt-4" @click="submit">送出</v-btn>

@@ -162,7 +162,7 @@ watch(
           <p class="text-grey-darken-3">要保人同意書</p>
           <div class="d-flex">
             <p class="text-grey-darken-3 pr-2">總頁數10頁</p>
-            <!-- <button @click="showFakeSign = !showFakeSign">顯示簽名</button> -->
+            <button @click="store.addPage">加頁</button>
           </div>
         </div>
       </v-col>
@@ -170,9 +170,9 @@ watch(
     <v-row>
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
-        <!-- <SwitchSideBarRead v-if="store.stage === 'preview'" /> -->
-        <!-- <SwitchSideBarSign :showFakeSign="showFakeSign" v-else /> -->
-        <SwitchSideBarSign :showFakeSign="showFakeSign" />
+        <SwitchSideBarRead v-if="store.stage === 'preview'" />
+        <SwitchSideBarSign :showFakeSign="showFakeSign" v-else />
+        <!-- <SwitchSideBarSign :showFakeSign="showFakeSign" /> -->
       </v-col>
       <!-- 保書、合約書內容 -->
       <v-col cols="11">

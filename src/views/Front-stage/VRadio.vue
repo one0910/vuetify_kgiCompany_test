@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 
 const questionGroups = [
@@ -14,41 +14,43 @@ const questionGroups = [
     title: '2. 教育資金準備',
     questions: [
       { text: '未來子女要出國留學？' },
-      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: 0 }
+      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: false }
     ]
   },
   {
     title: '3. 購屋資金準備',
     questions: [
       { text: '未來要在國外置產？' },
-      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: 0 }
+      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: false }
     ]
   },
   {
     title: '4. 養老生活資金準備',
     questions: [
       { text: '退休後規劃到國外長住、養老、生活或旅遊？' },
-      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: 0 }
+      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: false }
     ]
   },
   {
     title: '5. 遺族生活資金準備',
     questions: [
       { text: '保險金受益人居住於海外？' },
-      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: 0 }
+      { text: '該國家可流通貨幣與所購買之保單幣別相同？', dependsOn: false }
     ]
   }
 ];
 
 const totalQuestions = questionGroups.reduce((sum, group) => sum + group.questions.length, 0);
-const answers = ref(Array(totalQuestions).fill(null));
+const answers = ref<string[]>(Array(totalQuestions).fill(''));
 const others = ref('');
 
-const getGlobalIndex = (groupIndex, questionIndex) => {
+const getGlobalIndex = (groupIndex: number, questionIndex: number) => {
   let offset = 0;
   for (let i = 0; i < groupIndex; i++) {
     offset += questionGroups[i].questions.length;
   }
+  console.log(`offset => `, offset);
+  console.log(`questionIndex => `, questionIndex);
   return offset + questionIndex;
 };
 
@@ -60,6 +62,10 @@ const getVisibleQuestions = (group, groupIndex) => {
     }
     return true;
   });
+};
+
+const generateRule = (index: number) => {
+  return [(v: string) => (v === '否' ? 'this is error' : true)];
 };
 
 const submit = () => {
@@ -90,16 +96,16 @@ const submit = () => {
           class="py-1 border-b align-center"
         >
           <v-row>
-            <v-col cols="6" class="text-body-1"> {{ qIndex + 1 }}. {{ question.text }} </v-col>
-            <v-col cols="6">
+            <v-col cols="10" class="text-body-1"> {{ question.text }} </v-col>
+            <v-col cols="2">
               <v-radio-group
                 v-model="answers[getGlobalIndex(groupIndex, qIndex)]"
                 row
-                :mandatory="true"
+                :rules="generateRule(getGlobalIndex(groupIndex, qIndex))"
                 inline
                 class="d-flex align-center"
               >
-                <v-radio label="是" value="是" class="mr-4" />
+                <v-radio label="是" value="是" class="" />
                 <v-radio label="否" value="否" />
               </v-radio-group>
             </v-col>

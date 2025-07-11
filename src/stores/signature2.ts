@@ -38,8 +38,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
   // 後端傳來的資料做好整理後放至insureanceData
-  async function fetchInsureanceDocs() {
-    const data = await getSignatureDoc();
+  async function fetchInsureanceDocs(addData: any) {
+    if (addData) {
+      console.log(`yes => `,)
+      return
+    }
+    // console.log(`no => `,)
+    const data = await getSignatureDoc(0);
     originalStatusMap.value = {};
     if (!data) return;
 
@@ -154,6 +159,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
     signatureRoleType.value = result;
   }
 
+  async function addPage(params: type) {
+    const addData = await getSignatureDoc(2)
+    fetchInsureanceDocs(addData)
+  }
+
   //角色切換
   function switchRoleToButton(index: number) {
     const docs = currentDocs.value;
@@ -191,7 +201,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
-    console.log(`doc => `, doc)
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = base64;
@@ -199,7 +208,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
-        console.log(`img.height => `, img.height)
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
@@ -452,6 +460,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     currentPage,
     currentRole,
     currectClickSign,
+    addPage,
     originalStatusMap,
     switchPage,
     skipToSignPosition,

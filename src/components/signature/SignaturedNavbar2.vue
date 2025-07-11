@@ -49,7 +49,7 @@ watch(
 <template>
   <v-sheet
     class="py-1"
-    :class="[store.stage === 'preview' ? 'd-flex' : 'd-flex']"
+    :class="[store.stage === 'preview' ? 'd-none' : 'd-flex']"
     style="background-color: rgba(0, 0, 0, 0.8)"
     ref="navbarRef"
   >

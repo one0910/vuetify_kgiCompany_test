@@ -167,21 +167,35 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //角色切換
   function switchRoleToButton(index: number) {
     const docs = currentDocs.value;
-    const role = signatureRoleType.value[index];
-
+    const role = signatureRoleType.value[index] as any
+    const unSignedIndex = role.buttonStatus.findIndex((status: string) => status === 'unsigned')
+    const signIndex = role.buttonStatus.findIndex((status: string) => status === 'signed')
     // 根據對應角色的 buttonStatus，逐頁更新 currentDocs 中的 buttonStatus
     role.buttonStatus.forEach((status, pageIndex) => {
       if (docs[pageIndex]) {
         docs[pageIndex].buttonStatus = status;
-      }
 
-      //重新render canvas，因為只有切換到該角色時，未簽名位置才會顯示粉紅背景框
-      if (!renderedCanvas.value) {
-        return
-      } else {
-        renderedCanvas.value.updateCanvasByIndex(pageIndex)
+        //在這裡做重新render canvas，目的是為了只有切換到該角色時，未簽未位置才會顯示粉紅背景框
+        if (!renderedCanvas.value) {
+          return
+        } else {
+          renderedCanvas.value.updateCanvasByIndex(pageIndex)
+        }
       }
     });
+
+    //只有在簽名頁時，sidebar的按鈕才需要去判斷它做簽名類型(角色)切換時，它會在哪一頁的按鈕，同時並將其跳至該頁的所在的角色簽名
+    if (stage.value === 'sign1') {
+      if (unSignedIndex !== -1) {
+        skipToSignPosition(unSignedIndex.toString(), 'button')
+        currentPage.value = unSignedIndex
+      } else if (signIndex !== -1) {
+        skipToSignPosition(signIndex.toString(), 'button')
+        currentPage.value = signIndex
+      } else {
+        skipToSignPosition('0', 'button')
+      }
+    }
   }
 
 

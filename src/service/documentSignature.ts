@@ -1,5 +1,4 @@
 export const getSignatureDoc = async (page: number): Promise<any> => {
-  console.log(`page => `, page)
   const url = page ? `http://localhost:5173/mocks/Insureance${page}.json` : `http://localhost:5173/mocks/Insureance.json`
   try {
     const response = await fetch(url)

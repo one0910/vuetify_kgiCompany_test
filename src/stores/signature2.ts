@@ -5,6 +5,7 @@ import { typeMapRole } from '@/utility/roleMap';
 
 
 
+
 export const useInsureanceStore = defineStore('insureance', () => {
   type Stage = 'signTypeSelect' | 'signType_paper' | 'preview' | 'sign1' | 'sign2';
   type SignStatus = 'unselected' | 'unsigned' | 'signed';
@@ -38,19 +39,11 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
 
   // 後端傳來的資料做好整理後放至insureanceData
-  async function fetchInsureanceDocs(addData: any) {
-    if (addData) {
-      console.log(`yes => `,)
-      return
-    }
-    // console.log(`no => `,)
-    const data = await getSignatureDoc(0);
-    originalStatusMap.value = {};
-    if (!data) return;
+  async function fetchInsureanceDocs(addData?: any) {
+    const rawData = addData || await getSignatureDoc(2);
+    if (!rawData) return;
+    const { form, sign } = rawData;
 
-    const { form, sign } = data;
-
-    // 將 sign 根據 form 分組
     const groupedSignatures = sign.reduce((acc: Record<string, any[]>, sig) => {
       if (!acc[sig.form]) {
         acc[sig.form] = [];
@@ -63,17 +56,18 @@ export const useInsureanceStore = defineStore('insureance', () => {
       return acc;
     }, {});
 
-    // 將 form 結合對應的 signature
+    // 起始頁面 index 要根據現有資料長度繼續編號
+    const startIndex = insureanceData.value.length;
+
+    // 將form 結合對應的signatrue
     const transformedData = await Promise.all(
-      form.map(async (item, index) => {
+      form.map(async (item, idx) => {
+        const pageIndex = startIndex + idx;
         const documentHeight = await getImageHeight(item.docSource);
-        originalStatusMap.value[index] = {
-          status: 'unselected',
-          type: 9
-        }
+
         return {
           ...item,
-          pageIndex: index,
+          pageIndex,
           signature: groupedSignatures[item.form] || [],
           pageHeight: 0,
           documentHeight,
@@ -81,10 +75,25 @@ export const useInsureanceStore = defineStore('insureance', () => {
       })
     );
 
-    insureanceData.value = transformedData;
-    buildSignatureRoleType()
-    setFirstPageCurrentRole()
+    // ⭐️ 將新資料追加進原本的 insureanceData
+    const priInsureanceDataLength = insureanceData.value.length
+    insureanceData.value.push(...transformedData);
+
+    // ⭐️ 重新建構角色對應
+    buildSignatureRoleType();
+
+    // 如果是初次載入才設 currentRole
+    // 若是新增資料也補上目前角色的狀態映射
+    if (addData) {
+      switchRoleToButton(currentRole.value.index);
+      renderedCanvas.value.addCanvas(transformedData, priInsureanceDataLength)
+      return
+    } else {
+      renderedCanvas.value.renderAllCanvas()
+      setFirstPageCurrentRole();
+    }
   }
+
 
 
   function setFirstPageCurrentRole() {
@@ -156,6 +165,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         buttonStatus
       };
     });
+
     signatureRoleType.value = result;
   }
 
@@ -171,6 +181,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const unSignedIndex = role.buttonStatus.findIndex((status: string) => status === 'unsigned')
     const signIndex = role.buttonStatus.findIndex((status: string) => status === 'signed')
     // 根據對應角色的 buttonStatus，逐頁更新 currentDocs 中的 buttonStatus
+    console.log(`role => `, role)
+
     role.buttonStatus.forEach((status, pageIndex) => {
       if (docs[pageIndex]) {
         docs[pageIndex].buttonStatus = status;

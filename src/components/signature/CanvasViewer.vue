@@ -55,13 +55,51 @@ async function updateCanvasByIndex(index) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
+async function addCanvas(newDocuments, priInsureanceDataLength) {
+  isLoading.value = true;
+  try {
+    if (!canvasRef.value || !newDocuments.length) return;
+
+    const roleTypeList = store.signatureRoleType;
+
+    for (let i = 0; i < newDocuments.length; i++) {
+      const canvas = await store.renderInsureanceDoc(newDocuments[i]);
+      console.log(`canvas => `, canvas);
+      if (canvas) {
+        canvasRef.value.appendChild(canvas);
+        await nextTick();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const domHeight = canvas.offsetHeight;
+        store.insureanceData[priInsureanceDataLength + i].pageHeight = domHeight;
+
+        //更新signatureRoleType裡的pageData;
+        for (const role of roleTypeList) {
+          if (role.pageData[priInsureanceDataLength + i]) {
+            role.pageData[priInsureanceDataLength + i].pageHeight = domHeight;
+          }
+        }
+      }
+    }
+
+    // //將新文檔追加到現有documents中
+    // // eslint-disable-next-line vue/no-mutating-props
+    // documents.push(...newDocuments);
+  } catch (error) {
+    console.error('Error adding new canvases:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
 onMounted(async () => {
   await renderAllCanvas();
 });
 
 defineExpose({
   renderAllCanvas,
-  updateCanvasByIndex
+  updateCanvasByIndex,
+  addCanvas
 });
 </script>
 

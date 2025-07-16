@@ -4,13 +4,12 @@ import { useInsureanceStore } from '@/stores/signature';
 import { formatIndex } from '@/utility/transform';
 
 const store = useInsureanceStore();
-
 const insureanceData = computed(() => store.insureanceData);
 const currentPage = computed(() => store.currentPage);
 </script>
 
 <template>
-  <v-sheet height="350" class="bgPrimaryColor">
+  <v-sheet height="450" class="overflow-y-auto bgPrimaryColor">
     <v-list class="bgPrimaryColor">
       <v-list-item v-for="(item, index) in insureanceData" :key="index" tag="div" class="px-0">
         <template v-slot>

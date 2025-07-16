@@ -102,6 +102,10 @@ function goToNextStage() {
 }
 
 onMounted(async () => {
+  //將canvasViewerRef寫至store
+  store.setCanvseViewer(canvasViewerRef.value);
+
+  //進入store,透過fetchInsureanceDocs進入資料整理及整合
   await store.fetchInsureanceDocs();
   const el = scrollContainerRef.value?.$el;
   if (el instanceof HTMLElement) {
@@ -121,19 +125,6 @@ watch(
     requestAnimationFrame(() => {
       el.addEventListener('scroll', detectBottom);
     });
-  }
-);
-
-watch(
-  () => store.insureanceData.length,
-  (length) => {
-    if (length > 0) {
-      nextTick(() => {
-        canvasViewerRef.value?.renderAllCanvas();
-        //將canvasViewerRef寫至store
-        store.setCanvseViewer(canvasViewerRef.value);
-      });
-    }
   }
 );
 </script>

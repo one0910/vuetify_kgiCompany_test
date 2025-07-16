@@ -29,7 +29,6 @@ interface Emits {
   (event: 'confirm', signature: string): void;
 }
 const emit = defineEmits<Emits>();
-console.log(`props => `, props);
 
 const isShowModel = defineModel<boolean>('show', {
   required: false,

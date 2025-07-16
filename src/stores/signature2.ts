@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
+import throttle from 'lodash/throttle';
 
 
 
@@ -170,12 +171,15 @@ export const useInsureanceStore = defineStore('insureance', () => {
     signatureRoleType.value = result;
   }
 
-  async function addPage(params: type) {
+  async function addPage() {
     if (insureanceData.value.length >= allPageNumber) return
 
     const addData = await getSignatureDoc(2)
     fetchInsureanceDocs(addData)
   }
+
+  // 使用 throttle事年節流，來防上同一時間點多次觸發增加頁面的API
+  const throttledAddPage = throttle(addPage, 1000, { leading: true, trailing: false });
 
   //角色切換
   function switchRoleToButton(index: number) {
@@ -489,7 +493,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     currentPage,
     currentRole,
     currectClickSign,
-    addPage,
+    addPage: throttledAddPage,
     originalStatusMap,
     switchPage,
     skipToSignPosition,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 const questionGroups = [
   {
@@ -42,15 +42,15 @@ const questionGroups = [
 
 const totalQuestions = questionGroups.reduce((sum, group) => sum + group.questions.length, 0);
 const answers = ref<string[]>(Array(totalQuestions).fill(''));
+// const answers = ref(false);
 const others = ref('');
+const isConfirmed = ref(false); // 添加確認checkbox的狀態
 
 const getGlobalIndex = (groupIndex: number, questionIndex: number) => {
   let offset = 0;
   for (let i = 0; i < groupIndex; i++) {
     offset += questionGroups[i].questions.length;
   }
-  console.log(`offset => `, offset);
-  console.log(`questionIndex => `, questionIndex);
   return offset + questionIndex;
 };
 
@@ -79,6 +79,18 @@ const submit = () => {
   });
   console.log('其他說明:', others.value);
 };
+
+// 監聽isConfirmed，當打勾時自動將第一題設為"是"
+watch(isConfirmed, (newValue) => {
+  console.log(`newValue => `, newValue);
+  if (newValue) {
+    console.log(`answers.value; => `, answers.value);
+    for (let i = 0; i < questionGroups[0].questions.length; i++) {
+      answers.value[i] = 'yes';
+    }
+  } else {
+  }
+});
 </script>
 
 <template>
@@ -88,7 +100,15 @@ const submit = () => {
         <v-col cols="12" class="font-weight-bold text-body-1 mb-2">
           {{ group.title }}
         </v-col>
-
+        <!-- 為第一題添加確認checkbox -->
+        <v-col v-if="groupIndex === 0" cols="12" class="py-1">
+          <v-checkbox
+            v-model="isConfirmed"
+            label="本人已確認下列告知事項"
+            color="primary"
+            hide-details
+          ></v-checkbox>
+        </v-col>
         <v-col
           v-for="(question, qIndex) in getVisibleQuestions(group, groupIndex)"
           :key="qIndex"
@@ -105,8 +125,8 @@ const submit = () => {
                 inline
                 class="d-flex align-center"
               >
-                <v-radio label="是" value="是" class="" />
-                <v-radio label="否" value="否" />
+                <v-radio label="是" value="yes" class="" />
+                <v-radio label="否" value="no" />
               </v-radio-group>
             </v-col>
           </v-row>

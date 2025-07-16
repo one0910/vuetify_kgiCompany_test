@@ -22,6 +22,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const signatureRoleType = ref<any[]>([])
   const openSignaturePadModal = ref<boolean>(false)
   const currectClickSign = ref({ width: 0, height: 0, pageIndex: 0, sigIndex: 0, type: 0 })
+  let allPageNumber = 17
 
 
   //是否啟用下一步的按鈕
@@ -170,6 +171,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   async function addPage(params: type) {
+    if (insureanceData.value.length >= allPageNumber) return
+
     const addData = await getSignatureDoc(2)
     fetchInsureanceDocs(addData)
   }

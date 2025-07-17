@@ -65,7 +65,15 @@ const getVisibleQuestions = (group, groupIndex) => {
 };
 
 const generateRule = (index: number) => {
-  return [(v: string) => (v === '否' ? 'this is error' : true)];
+  const rule = (value: string) => {
+    console.log(`value => `, value);
+    // 檢查值是否為 '否'
+    if (value === '否') {
+      return 'this is error';
+    }
+    return true; // 如果不是 '否'，返回 true 表示通過驗證
+  };
+  return [rule]; // 將規則放入陣列返回
 };
 
 const submit = () => {
@@ -125,8 +133,8 @@ watch(isConfirmed, (newValue) => {
                 inline
                 class="d-flex align-center"
               >
-                <v-radio label="是" value="yes" class="" />
-                <v-radio label="否" value="no" />
+                <v-radio label="是" value="是" class="" />
+                <v-radio label="否" value="否" />
               </v-radio-group>
             </v-col>
           </v-row>

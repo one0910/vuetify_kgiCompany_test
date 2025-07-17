@@ -26,6 +26,10 @@ const routes = [
     path: '/vradio',
     component: () => import('@/views/Front-stage/VRadio.vue')
   },
+  {
+    path: '/vradio2',
+    component: () => import('@/views/Front-stage/VRadio2.vue')
+  },
 ];
 
 const router = createRouter({

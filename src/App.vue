@@ -57,6 +57,7 @@ function changeTheme(params) {
         </v-list>
       </v-menu>
       <v-btn to="/vradio" class="ml-2" size="small" text="V-radio"> </v-btn>
+      <v-btn to="/vradio2" class="ml-2" size="small" text="V-radio2"> </v-btn>
       <v-btn to="/vlist" class="ml-2" size="small" text="Vlist"> </v-btn>
 
       <v-btn to="/vbuttonlist" class="ml-2" size="small" text="Signature"> </v-btn>

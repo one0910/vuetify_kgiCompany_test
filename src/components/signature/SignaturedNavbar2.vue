@@ -16,6 +16,10 @@ const signRole = [
   '被保人姓名',
   '被保人姓名',
   '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
+  '被保人姓名',
   '被保人姓名'
 ];
 
@@ -48,7 +52,7 @@ watch(
 </script>
 <template>
   <v-sheet
-    class="py-1"
+    class="py-1 navbarContainer overflow-x-auto"
     :class="[store.stage === 'preview' ? 'd-none' : 'd-flex']"
     style="background-color: rgba(0, 0, 0, 0.8)"
     ref="navbarRef"
@@ -83,8 +87,14 @@ watch(
 </template>
 
 <style lang="scss" scoped>
+.navbarContainer:deep(.v-list) {
+  /* display: none; */
+  flex-shrink: 0;
+}
+
 .border-active {
   border: 2px solid #ccc;
+
   /* background-color: #f00; */
 }
 

@@ -55,7 +55,44 @@ async function updateCanvasByIndex(index) {
   }
 }
 
-// eslint-disable-next-line no-unused-vars
+// 批量更新某範圍的 canvas
+async function updateCanvas(startIndex, endIndex) {
+  if (!canvasRef.value) return;
+  console.log(`startIndex => `, startIndex);
+  console.log(`endIndex => `, endIndex);
+  const canvasContainer = canvasRef.value;
+  const roleTypeList = store.signatureRoleType;
+
+  try {
+    for (let i = startIndex; i <= endIndex; i++) {
+      const oldCanvas = canvasContainer.children[i];
+      const updatedCanvas = await store.renderInsureanceDoc(documents[i]);
+
+      if (updatedCanvas && oldCanvas) {
+        // 用新的 Canvas 替換舊的
+        canvasContainer.replaceChild(updatedCanvas, oldCanvas);
+
+        await nextTick();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        // 更新 DOM 高度到 documents[i]
+        const domHeight = updatedCanvas.offsetHeight;
+        documents[i].pageHeight = domHeight;
+
+        // 更新 signatureRoleType 裡的 pageData
+        for (const role of roleTypeList) {
+          if (role.pageData[i]) {
+            role.pageData[i].pageHeight = domHeight;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error updating canvases:`, error);
+  }
+}
+
+// 加入新的canvas
 async function addCanvas(newDocuments, priInsureanceDataLength) {
   isLoading.value = true;
   try {
@@ -99,12 +136,14 @@ onMounted(async () => {
 defineExpose({
   renderAllCanvas,
   updateCanvasByIndex,
+  updateCanvas,
   addCanvas
 });
 </script>
 
 <template>
-  <Loading v-show="isLoading" />
+  <Loading v-show="isLoading" :type="'showGif'" />
+  <Loading v-show="store.loadDocLoading" :type="'noGift'" />
 
   <div
     ref="canvasRef"

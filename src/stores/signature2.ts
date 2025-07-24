@@ -15,7 +15,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const currentRole = ref({ index: 0, type: 0 })
   const currentPage = ref(0);
   const renderedCanvas = ref(null);
-  const isLoading = ref(true)
+  const loadDocLoading = ref(false)
   const scrollContainerRef = ref(null);
   const currentDocs = computed(() => insureanceData.value);
   const originalStatusMap = ref<Record<number, { status: SignStatus; type: number }>>({});
@@ -23,7 +23,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const signatureRoleType = ref<any[]>([])
   const openSignaturePadModal = ref<boolean>(false)
   const currectClickSign = ref({ width: 0, height: 0, pageIndex: 0, sigIndex: 0, type: 0 })
-  let allPageNumber = 17
+  const currentGetPageInfo = ref<{ allPageNumber: number, loadedPage: number }>({ allPageNumber: 17, loadedPage: 0 })
+  // let allPageNumber = 17
 
 
   //是否啟用下一步的按鈕
@@ -79,7 +80,41 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
     // ⭐️ 將新資料追加進原本的 insureanceData
     const priInsureanceDataLength = insureanceData.value.length
-    insureanceData.value.push(...transformedData);
+    if (!addData) {
+      insureanceData.value.push(...transformedData);
+      // 這裡記錄目前已經load到前端的頁數
+      const priInsureanceDataLength: number = insureanceData.value.length
+      const allPageNumber = currentGetPageInfo.value.allPageNumber
+      currentGetPageInfo.value.loadedPage = priInsureanceDataLength
+
+      //剩餘還未載入的頁數
+      const restInPage = allPageNumber - priInsureanceDataLength
+
+      // //將剩餘還未載入的頁數數量加進空資料進入insueranceData
+      const emptyPages = Array.from({ length: restInPage }, (_, i) => {
+        const pageIndex = priInsureanceDataLength + i
+        return {
+          buttonStatus: 'unsigned',
+          docSource: '',
+          documentHeight: 0,
+          form: '',
+          pageHeight: 0,
+          pageIndex,
+          readComplete: false,
+          signature: []
+        }
+      })
+      insureanceData.value.push(...emptyPages)
+    }
+
+    if (addData) {
+      console.log(`addData => `, addData)
+      insureanceData.value.splice(4, transformedData.length, ...transformedData)
+      await renderedCanvas.value.updateCanvas(4, 7)
+    }
+
+
+
 
     // ⭐️ 重新建構角色對應
     buildSignatureRoleType();
@@ -87,8 +122,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // 如果是初次載入才設 currentRole
     // 若是新增資料也補上目前角色的狀態映射
     if (addData) {
-      switchRoleToButton(currentRole.value.index);
-      renderedCanvas.value.addCanvas(transformedData, priInsureanceDataLength)
+      // switchRoleToButton(currentRole.value.index);
+      // renderedCanvas.value.addCanvas(transformedData, priInsureanceDataLength)
       return
     } else {
       renderedCanvas.value.renderAllCanvas()
@@ -172,7 +207,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   }
 
   async function addPage() {
-    if (insureanceData.value.length >= allPageNumber) return
+    // if (insureanceData.value.length >= currentGetPageInfo.value.allPageNumber) return
 
     const addData = await getSignatureDoc(2)
     fetchInsureanceDocs(addData)
@@ -234,6 +269,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
+    // 如果沒有base64的情況下，做一個空的cavas
+    if (!base64) {
+      return getEmptyCanvas()
+    }
+
+    // 正常情況下載入 base64 圖片
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = base64;
@@ -314,12 +355,67 @@ export const useInsureanceStore = defineStore('insureance', () => {
     });
   }
 
+  //製作空的cavas
+  function getEmptyCanvas() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1654;
+    canvas.height = 2339;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      let angle = 0; // 用於控制旋轉角度
+
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 文字
+        ctx.fillStyle = '#000000';
+        ctx.font = '24px Arial';
+        ctx.textBaseline = 'top';
+        ctx.fillText('文件載入中', 20, 20);
+
+        // 畫旋轉的圓圈
+        const x = 160; // 圓圈位置 (文字旁邊)
+        const y = 30;
+        const radius = 10;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 1.5); // 只畫 270 度
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+
+        angle += 0.25; // 每次動畫旋轉的角度
+        requestAnimationFrame(draw);
+      };
+
+      draw();
+    }
+    return canvas;
+  }
+
 
   //換頁籤切換功能
   async function switchPage({ index = currentPage.value, type = '' }) {
-    isLoading.value = false
+    // loadDocLoading.value = true
     currentPage.value = index;
     scrollToPage(currentPage.value);
+    console.log(`insureanceData.value[index].docSource => `, insureanceData.value[index].docSource)
+    if (!insureanceData.value[index].docSource) {
+      // loadDocLoading.value = true
+      // addPage()
+      // loadDocLoading.value = false
+
+    }
+    // loadDocLoading.value = false
     //需已閱讀才能跳頁
     // if (salesDocPreview.value[currentPage.value].readComplete) {
     //   currentPage.value = index;
@@ -501,7 +597,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     switchRoleToButton,
     renderInsureanceDoc,
     renderedCanvas,
-    isLoading,
+    loadDocLoading,
     scrollContainerRef,
     setScrollContainer,
     setCanvseViewer,

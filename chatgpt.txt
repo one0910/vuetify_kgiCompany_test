@@ -1,10 +1,6 @@
-請你再此程式幫我加一個addCanvas的功能, 如圖所示,老原本在圖一的時候它有4筆canvas的資料,畫面也已渲染上去
-然後如圖二所示,當在圖一中按下增加的按鈕時,它的資料會從4筆變到8筆,也就是再多加4筆
-
-我希望你這裡做一個addCanvas的功能, 就是我將它後來再加入的canvas的資料用appendChild(canvas)的方式插入到原本既有的canvasRef.value
-我之所以用這樣用appendChild的方式插入,是不希望我額外再加入canvas再重新renderAllCanvas()這支程式,因為我不想造成整個畫面再重新渲染
-所以我改採appendChild插入到目前既有的canvasRef dom 的裡, 不知我的想法可不可行, 你幫我做
-
+我們繼續, 下面是我關於canvas渲染、顯示、更新的程式碼，你幫我寫一段updatCavas()功能,
+它主要會更新我目前畫面中的canvas的DOM,如圖所示,我目前的CANVAS DOM有17個,由於我的CANVAS是根據我的上層的documents渲染出來的
+那假設我今天的documents更新了它的第5~第8筆資料,我希望我的第5個canvas DOM~第8個CANVAS也重新被更新,那我該怎麼做? 你幫我把這需求寫在updatCavas()
 
 <script setup>
 import { onMounted, ref, nextTick, defineExpose } from 'vue';
@@ -52,6 +48,7 @@ async function renderAllCanvas() {
 
 //寫入簽名後，更新canvas
 async function updateCanvasByIndex(index) {
+  console.log(`index => `, index);
   const canvasContainer = canvasRef.value;
   if (!canvasContainer) return;
 
@@ -63,13 +60,51 @@ async function updateCanvasByIndex(index) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
+async function addCanvas(newDocuments, priInsureanceDataLength) {
+  isLoading.value = true;
+  try {
+    if (!canvasRef.value || !newDocuments.length) return;
+
+    const roleTypeList = store.signatureRoleType;
+
+    for (let i = 0; i < newDocuments.length; i++) {
+      const canvas = await store.renderInsureanceDoc(newDocuments[i]);
+      console.log(`canvas => `, canvas);
+      if (canvas) {
+        canvasRef.value.appendChild(canvas);
+        await nextTick();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const domHeight = canvas.offsetHeight;
+        store.insureanceData[priInsureanceDataLength + i].pageHeight = domHeight;
+
+        //更新signatureRoleType裡的pageData;
+        for (const role of roleTypeList) {
+          if (role.pageData[priInsureanceDataLength + i]) {
+            role.pageData[priInsureanceDataLength + i].pageHeight = domHeight;
+          }
+        }
+      }
+    }
+
+    // //將新文檔追加到現有documents中
+    // // eslint-disable-next-line vue/no-mutating-props
+    // documents.push(...newDocuments);
+  } catch (error) {
+    console.error('Error adding new canvases:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
 onMounted(async () => {
   await renderAllCanvas();
 });
 
 defineExpose({
   renderAllCanvas,
-  updateCanvasByIndex
+  updateCanvasByIndex,
+  addCanvas
 });
 </script>
 

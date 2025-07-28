@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
 import throttle from 'lodash/throttle';
+import Insureance3 from '@/mocks/Insureance3.json'
 
 
 
@@ -43,7 +44,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   // 後端傳來的資料做好整理後放至insureanceData
   async function fetchInsureanceDocs(addData?: any) {
+    // const rawData = addData || Insureance3.data?.overPrints[0];
     const rawData = addData || await getSignatureDoc(2);
+    // const data = Insureance3.data?.overPrints[0]
+    const data = getSignatureDoc(2)
+    // console.log(`data => `, data)
+
     if (!rawData) return;
     const { form, sign } = rawData;
 
@@ -66,10 +72,12 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const transformedData = await Promise.all(
       form.map(async (item, idx) => {
         const pageIndex = startIndex + idx;
-        const documentHeight = await getImageHeight(item.docSource);
+        // const documentHeight = await getImageHeight(item.docSource);
+        const documentHeight = 2339;
 
         return {
           ...item,
+          docSource: `${item.docSource}`,
           pageIndex,
           signature: groupedSignatures[item.form] || [],
           pageHeight: 0,
@@ -78,39 +86,17 @@ export const useInsureanceStore = defineStore('insureance', () => {
       })
     );
 
-    // ⭐️ 將新資料追加進原本的 insureanceData
-    const priInsureanceDataLength = insureanceData.value.length
     if (!addData) {
+      console.log('[首次載入] transformedData =>', transformedData);
       insureanceData.value.push(...transformedData);
-      // 這裡記錄目前已經load到前端的頁數
-      const priInsureanceDataLength: number = insureanceData.value.length
-      const allPageNumber = currentGetPageInfo.value.allPageNumber
-      currentGetPageInfo.value.loadedPage = priInsureanceDataLength
-
-      //剩餘還未載入的頁數
-      const restInPage = allPageNumber - priInsureanceDataLength
-
-      // //將剩餘還未載入的頁數數量加進空資料進入insueranceData
-      const emptyPages = Array.from({ length: restInPage }, (_, i) => {
-        const pageIndex = priInsureanceDataLength + i
-        return {
-          buttonStatus: 'unsigned',
-          docSource: '',
-          documentHeight: 0,
-          form: '',
-          pageHeight: 0,
-          pageIndex,
-          readComplete: false,
-          signature: []
-        }
-      })
-      insureanceData.value.push(...emptyPages)
+      // addPage()
     }
 
     if (addData) {
-      console.log(`addData => `, addData)
-      insureanceData.value.splice(4, transformedData.length, ...transformedData)
-      await renderedCanvas.value.updateCanvas(4, 7)
+      console.log('[新增資料] addData =>', addData);
+      console.log('[新增資料] transformedData =>', transformedData);
+      insureanceData.value.splice(0, transformedData.length, ...transformedData)
+      await renderedCanvas.value.updateCanvas(0, 4)
     }
 
 
@@ -123,7 +109,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // 若是新增資料也補上目前角色的狀態映射
     if (addData) {
       // switchRoleToButton(currentRole.value.index);
-      // renderedCanvas.value.addCanvas(transformedData, priInsureanceDataLength)
       return
     } else {
       renderedCanvas.value.renderAllCanvas()
@@ -152,6 +137,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   //角色列按鈕
   function buildSignatureRoleType() {
     const roleMap = new Map<number, Record<number, { sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
+    console.log(`roleMap => `, roleMap)
 
     for (const doc of insureanceData.value) {
       const pageIndex = doc.pageIndex;
@@ -193,6 +179,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
       const allSignedComplete = Object.values(pageMap).every((entry: any) => {
         return !!entry.signimg && entry.signimg.trim() !== '';
       });
+      console.log(`pageMap => `, pageMap)
 
       return {
         type,

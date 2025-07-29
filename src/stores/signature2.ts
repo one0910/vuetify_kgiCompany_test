@@ -90,29 +90,24 @@ export const useInsureanceStore = defineStore('insureance', () => {
       console.log('[首次載入] transformedData =>', transformedData);
       insureanceData.value.push(...transformedData);
       addPage()
-    }
-
-    if (addData) {
+    } else {
       console.log('[新增資料] addData =>', addData);
       console.log('[新增資料] transformedData =>', transformedData);
       insureanceData.value.splice(0, transformedData.length, ...transformedData)
       await renderedCanvas.value.updateCanvas(0, 3)
     }
 
-
-
-
     // ⭐️ 重新建構角色對應
     buildSignatureRoleType();
 
     // 如果是初次載入才設 currentRole
     // 若是新增資料也補上目前角色的狀態映射
-    if (addData) {
-      switchRoleToButton(currentRole.value.index);
-      return
-    } else {
+    if (!addData) {
       renderedCanvas.value.renderAllCanvas()
       setFirstPageCurrentRole();
+      return
+    } else {
+      switchRoleToButton(currentRole.value.index);
     }
   }
 
@@ -180,7 +175,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
       const allSignedComplete = Object.values(pageMap).every((entry: any) => {
         return !!entry.signimg && entry.signimg.trim() !== '';
       });
-      console.log(`pageMap_2 => `, pageMap)
       return {
         type,
         name: typeMapRole[type] || `未知角色 ${type}`,

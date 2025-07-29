@@ -27,8 +27,7 @@ function switchRoleHandler({ type }, buttonIndex) {
   store.currentRole = { index: buttonIndex, type };
   console.log(`store.currentRole => `, store.currentRole);
   store.switchRoleToButton(buttonIndex);
-  store.skipToSignPsisosition('0', 'button');
-  // store.skipToSignPosition(buttonIndex[0], 'role');
+  store.skipToSignPosition('0', 'button');
 }
 
 watch(

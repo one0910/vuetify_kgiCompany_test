@@ -66,6 +66,7 @@ async function updateCanvas(startIndex, endIndex) {
   try {
     for (let i = startIndex; i <= endIndex; i++) {
       const oldCanvas = canvasContainer.children[i];
+      console.log(`documents[i] => `, documents[i]);
       const updatedCanvas = await store.renderInsureanceDoc(documents[i]);
 
       if (updatedCanvas && oldCanvas) {

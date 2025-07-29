@@ -162,7 +162,7 @@ watch(
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
         <SwitchSideBarRead v-if="store.stage === 'preview'" />
-        <SwitchSideBarSign :showFakeSign="showFakeSign" v-else />
+        <SwitchSideBarSign v-else />
         <!-- <SwitchSideBarSign :showFakeSign="showFakeSign" /> -->
       </v-col>
       <!-- 保書、合約書內容 -->

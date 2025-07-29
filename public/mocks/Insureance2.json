@@ -7,6 +7,7 @@
       "signDate": "20250208-054244",
       "type": "9",
       "signimg": "",
+      "isSigned": false,
       "snmae": "測PG01個人存款轉帳"
     },
     {
@@ -16,6 +17,7 @@
       "signDate": "20250208-054253",
       "type": "0",
       "signimg": "",
+      "isSigned": false,
       "snmae": "謝Ｑ湖"
     },
     {
@@ -25,6 +27,7 @@
       "signDate": "20250208-054240",
       "type": "1",
       "signimg": "",
+      "isSigned": false,
       "snmae": "測PG01個人存款轉帳"
     },
     {
@@ -34,6 +37,7 @@
       "signDate": "20250208-054253",
       "type": "0",
       "signimg": "",
+      "isSigned": false,
       "snmae": "謝Ｑ湖"
     },
     {
@@ -43,6 +47,7 @@
       "signDate": "20250208-054244",
       "type": "9",
       "signimg": "",
+      "isSigned": false,
       "snmae": "測PG01個人存款轉帳"
     },
     {
@@ -52,6 +57,7 @@
       "signDate": "20250208-054253",
       "type": "0",
       "signimg": "",
+      "isSigned": false,
       "snmae": "謝Ｑ湖"
     },
     {
@@ -61,6 +67,7 @@
       "signDate": "20250208-054240",
       "type": "1",
       "signimg": "",
+      "isSigned": false,
       "snmae": "測PG01個人存款轉帳"
     }
   ],

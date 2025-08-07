@@ -94,7 +94,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
       console.log('[新增資料] addData =>', addData);
       console.log('[新增資料] transformedData =>', transformedData);
       insureanceData.value.splice(0, transformedData.length, ...transformedData)
-      await renderedCanvas.value.updateCanvas(0, 3)
+      await renderedCanvas.value.updateCanvas(1, 22)
     }
 
     // ⭐️ 重新建構角色對應

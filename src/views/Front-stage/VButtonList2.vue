@@ -39,13 +39,13 @@ function detectBottom(event) {
 
     if (isRead && store.currentPage === index) {
       doc.readComplete = true;
-      console.log(`✅ 第 ${index + 1} 頁已閱讀完畢`);
+      // console.log(`✅ 第 ${index + 1} 頁已閱讀完畢`);
     }
 
     if (isInView) {
       if (store.currentPage !== index) {
         store.currentPage = index;
-        console.log(`👉 現在位於第 ${index + 1} 頁`);
+        // console.log(`👉 現在位於第 ${index + 1} 頁`);
       }
     }
 

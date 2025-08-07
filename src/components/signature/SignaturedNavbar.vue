@@ -7,8 +7,15 @@ const { signatureRoleType, currentRole, clickTabMapToType } = storeToRefs(store)
 const navbarRef = ref(null);
 
 function switchRoleHandler({ type, buttonIndex }) {
-  store.currentRole = type;
-  store.skipToSignPosition(buttonIndex[0], 'role');
+  let firstPosiotnKey = '';
+  const key = Object.keys(store.signatureRoleType[0].pageData);
+  if (key) {
+    firstPosiotnKey = key[0];
+  } else {
+    firstPosiotnKey = '0';
+  }
+  store.currentPage = Number(firstPosiotnKey);
+  store.skipToSignPosition(firstPosiotnKey, 'button');
 }
 
 // onMounted(async () => {

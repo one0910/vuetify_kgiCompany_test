@@ -270,40 +270,40 @@ export const useInsureanceStore = defineStore('insureance', () => {
         const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
 
         if (stage.value !== 'preview') {
-        }
-        const highlights = (doc.signature || []).map(sig => {
-          return {
-            xy: sig.xy,
-            signimg: sig.signimg,
-            color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
-            index: {
-              pageIndex: doc.pageIndex,
-              sigIndex: sig.sigIndex,
-              type: sig.type
+          const highlights = (doc.signature || []).map(sig => {
+            return {
+              xy: sig.xy,
+              signimg: sig.signimg,
+              color: (sig.signimg) ? 'rgba(0, 0, 0, 0)' : '#eb949459',
+              index: {
+                pageIndex: doc.pageIndex,
+                sigIndex: sig.sigIndex,
+                type: sig.type
+              }
             }
-          }
-        });
+          });
 
-        // 畫框
-        highlights.forEach(({ xy, color, signimg, index }) => {
-          const [x, y, width, height] = xy.split(',').map(Number);
-          if (index.type === currentRole.value.type) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, width, height);
-          }
+          // 畫框
+          highlights.forEach(({ xy, color, signimg, index }) => {
+            const [x, y, width, height] = xy.split(',').map(Number);
+            if (index.type === currentRole.value.type) {
+              ctx.fillStyle = color;
+              ctx.fillRect(x, y, width, height);
+            }
 
-          // ✅ 儲存可點擊區域
-          clickableRects.push({ x, y, width, height, xy, index });
+            // ✅ 儲存可點擊區域
+            clickableRects.push({ x, y, width, height, xy, index });
 
-          const signImg = new Image();
-          signImg.src = signimg;
-          signImg.onload = () => {
-            ctx.drawImage(signImg, x, y, width, height);
-            //簽完名後，在背景上色
-            // ctx.fillStyle = color;
-            // ctx.fillRect(x, y, width, height);
-          };
-        });
+            const signImg = new Image();
+            signImg.src = signimg;
+            signImg.onload = () => {
+              ctx.drawImage(signImg, x, y, width, height);
+              //簽完名後，在背景上色
+              // ctx.fillStyle = color;
+              // ctx.fillRect(x, y, width, height);
+            };
+          });
+        }
         // ✅ 座標定位click
         canvas.addEventListener('click', (event) => {
           const rect = canvas.getBoundingClientRect();
@@ -388,7 +388,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     // loadDocLoading.value = true
     currentPage.value = index;
     scrollToPage(currentPage.value);
-    console.log(`insureanceData.value[index].docSource => `, insureanceData.value[index].docSource)
     if (!insureanceData.value[index].docSource) {
       // loadDocLoading.value = true
       // addPage()
@@ -451,7 +450,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
           };
           const firstKey = Number(Object.keys(signatureRoleType.value[nextRoleIdx].pageData)[0]);
           currentPage.value = firstKey;
-          console.log(`firstKey => `, firstKey)
           role.allSignedComplete
           switchRoleToButton(nextRoleIdx)
           skipToSignPosition(firstKey.toString(), 'button')
@@ -531,6 +529,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     if (!(el instanceof HTMLElement)) return;
     const roleIndex = currentRole.value.index
     const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
+
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;
 

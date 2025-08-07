@@ -37,7 +37,17 @@ async function renderAllCanvas() {
   }
   //所有的canvas渲染完畢後，整個頁面的高度才會是對的，這個時候再來執行scrollTo，才會有作用，也才能到正確的位置
   if (store.stage === 'sign1') {
-    store.skipToSignPosition('0', 'button');
+    let firstPosiotnKey = '';
+    console.log(`store.signatureRoleType[0] => `, store.signatureRoleType[0]);
+    const key = Object.keys(store.signatureRoleType[0].pageData);
+    if (key) {
+      firstPosiotnKey = key[0];
+    } else {
+      firstPosiotnKey = '0';
+    }
+    store.currentPage = Number(firstPosiotnKey);
+    console.log(`firstPosiotnKey => `, firstPosiotnKey);
+    store.skipToSignPosition(firstPosiotnKey, 'button');
   }
   isLoading.value = false;
 }
@@ -58,13 +68,11 @@ async function updateCanvasByIndex(index) {
 // 批量更新某範圍的 canvas
 async function updateCanvas(startIndex, endIndex) {
   if (!canvasRef.value) return;
-  console.log(`startIndex => `, startIndex);
-  console.log(`endIndex => `, endIndex);
   const canvasContainer = canvasRef.value;
   const roleTypeList = store.signatureRoleType;
 
   try {
-    for (let i = startIndex; i <= endIndex; i++) {
+    for (let i = startIndex - 1; i <= endIndex - 1; i++) {
       const oldCanvas = canvasContainer.children[i];
       const updatedCanvas = await store.renderInsureanceDoc(documents[i]);
 

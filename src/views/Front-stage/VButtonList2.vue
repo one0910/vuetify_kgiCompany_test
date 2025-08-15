@@ -55,6 +55,7 @@ function detectBottom(event) {
 
 async function signtureHandler(base64Img) {
   const index = store.currectClickSign.pageIndex;
+  console.log(`signtureHandler_index => `, index);
   const roleIndex = store.currentRole.index;
   const signatrueRole = store.signatureRoleType[roleIndex].pageData[index.toString()];
   const currentDocIndex = signatrueRole.pageIndex;
@@ -66,13 +67,17 @@ async function signtureHandler(base64Img) {
   store.currentDocs[currentDocIndex].buttonStatus = 'signed';
   store.signatureRoleType[roleIndex].buttonStatus[currentDocIndex] = 'signed';
 
+  //若簽名的角色是業務(招攬人員)
+  if (store.currentRole.type === 0 && !store.salseSignatureImg) {
+    store.salseSignatureImg = base64Img;
+  }
+
   // 檢查是否整個角色簽完
   const isRoleAllSignCheck = await store.checkRoleSignAll(roleIndex);
   if (isRoleAllSignCheck) {
     store.signatureRoleType[roleIndex].allSignedComplete = true;
   }
 
-  console.log(`index => `, index);
   store.renderedCanvas.updateCanvasByIndex(index);
 
   store.openSignaturePadModal = false;

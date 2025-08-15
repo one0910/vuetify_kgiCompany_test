@@ -24,9 +24,9 @@ const signRole = [
 ];
 
 function switchRoleHandler({ type }, buttonIndex) {
-  store.currentRole = { index: buttonIndex, type };
+  // store.currentRole = { index: buttonIndex, type };
   //變更簽名類型(角色)
-  store.switchRoleToButton(buttonIndex);
+  store.switchRoleToButton(buttonIndex, type);
   //變更至簽名類型(角色)後，跳至該角色的第一個簽名位置
 }
 

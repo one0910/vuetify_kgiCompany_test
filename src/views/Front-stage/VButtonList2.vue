@@ -116,6 +116,20 @@ onMounted(async () => {
   if (el instanceof HTMLElement) {
     el.addEventListener('scroll', detectBottom);
     maxHeight.value = screen.availHeight * 0.62;
+    console.log(`window.screen.height => `, window.screen.height);
+    console.log(`window.screen.availHeight => `, window.screen.availHeight);
+    console.log(`window.outerHeight => `, window.outerHeight);
+    console.log(`window.innerHeight => `, window.innerHeight);
+    console.log(`window.visualViewport?.height => `, window.visualViewport?.height);
+    console.log(`document.documentElement.clientHeight => `, document.documentElement.clientHeight);
+    console.log(`document.documentElement.scrollHeight => `, document.documentElement.scrollHeight);
+    console.log(`window.scrollY => `, window.scrollY);
+    console.log(`el.clientHeight => `, el.clientHeight);
+    console.log(`el.offsetHeight => `, el.offsetHeight);
+    console.log(`el.scrollHeight => `, el.scrollHeight);
+    console.log(`el.getBoundingClientRect().height => `, el.getBoundingClientRect().height);
+    console.log(`window.devicePixelRatio => `, window.devicePixelRatio);
+
     store.setScrollContainer(el);
   } else return;
 });

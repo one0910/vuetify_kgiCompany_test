@@ -315,6 +315,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
           // 畫框
           highlights.forEach(({ xy, color, signimg, index }) => {
+
             const [x, y, width, height] = xy.split(',').map(Number);
             if (index.type === currentRole.value.type) {
               ctx.fillStyle = color;
@@ -323,11 +324,31 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
             // ✅ 儲存可點擊區域
             clickableRects.push({ x, y, width, height, xy, index });
+            const imgRatio = 1117 / 312;
+            const targetRatio = width / height;
 
             const signImg = new Image();
             signImg.src = signimg;
             signImg.onload = () => {
-              ctx.drawImage(signImg, x, y, width, height);
+
+              let drawWidth = width;
+              let drawHeight = height;
+              let offsetX = 0;
+              let offsetY = 0;
+
+              if (imgRatio > targetRatio) {
+                // 圖片比較寬，依寬等比縮放
+                drawWidth = width;
+                drawHeight = width / imgRatio;
+                offsetY = (height - drawHeight) / 2;
+              } else {
+                // 圖片比較高，依高等比縮放
+                drawHeight = height;
+                drawWidth = height * imgRatio;
+                offsetX = (width - drawWidth) / 2;
+              }
+
+              ctx.drawImage(signImg, x + offsetX, y + offsetY, drawWidth, drawHeight)
               //簽完名後，在背景上色
               // ctx.fillStyle = color;
               // ctx.fillRect(x, y, width, height);

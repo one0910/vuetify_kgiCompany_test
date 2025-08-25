@@ -83,6 +83,7 @@ const onKeydown = (e: KeyboardEvent) => {
 };
 
 const MAX_WIDTH = 894;
+const MAX_HEIGHT = 250;
 
 const computedDimensions = computed(() => {
   const originalWidth = props.width || MAX_WIDTH;
@@ -135,8 +136,8 @@ onBeforeUnmount(() => {
           <div class="position-relative signPadCantainer">
             <vue-signature-pad
               ref="signatureRef"
-              :width="`${computedDimensions.width}px`"
-              :height="`${computedDimensions.height}px`"
+              :width="`${MAX_WIDTH}px`"
+              :height="`${MAX_HEIGHT}px`"
               :min-width="6"
               :max-width="10"
               :options="{

@@ -42,7 +42,7 @@ function skipHandler({ buttonStatus }, index) {
 // 或你可以寫個函數測量 scrollTop
 function logScrollTop() {
   const el = scrollSheetRef.value?.$el;
-  console.log('目前 scrollTop:', el.scrollTop);
+  // console.log('目前 scrollTop:', el.scrollTop);
 }
 
 watch(

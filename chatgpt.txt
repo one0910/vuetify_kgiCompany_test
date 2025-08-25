@@ -1,5 +1,220 @@
-這一段的程式碼能不能幫我修正一下 , 我的checkAllItem裡的pleaseNote_itemoptionQ1、pleaseNote_itemoptionQ2、pleaseNote_itemoptionQ3、pleaseNote_itemoptionQ4
-先幫我檢查dataStore.$state.formData[option] 是否有其值 ,如果有則將其設置為dataStore.$state.formData[option].data = '是'
-然後它pleaseNote_itemoptionQ1、pleaseNote_itemoptionQ2、pleaseNote_itemoptionQ3、pleaseNote_itemoptionQ4 四個都必須得確認有沒有值, 只要有值,將其設置為dataStore.$state.formData[option].data = '是'
-例如dataStore.$state.formData[pleaseNote_itemoptionQ1]沒有值, 它會繼續dataStore.$state.formData[pleaseNote_itemoptionQ2]的檢查,若dataStore.$state.formData[pleaseNote_itemoptionQ2]沒有值,則繼續dataStore.$state.formData[pleaseNote_itemoptionQ3]的檢查
-若dataStore.$state.formData[pleaseNote_itemoptionQ3]有值, 則dataStore.$state.formData[pleaseNote_itemoptionQ3].data = '是', 然後繼續dataStore.$state.formData[pleaseNote_itemoptionQ4]的檢查, 依此列推
+你看一下下面的式碼, 其中組件<vue-signature-pad>它是套件@selemondev/vue3-signature-pad所提供的canvas畫布
+它的輸出就會如圖所示, 有一個canvas 的dom元素, 如圖所示, vue-signature-pad會產生一個id給該<canvas id="canvasRnk9Ba2KAxsDpVn6xt-Fm" data-uid="canvasRnk9Ba2KAxsDpVn6xt-Fm" width="1117" height="258" style="width: 100%; height: 100%; touch-action: none; user-select: none;"></canvas>
+不知道有沒有方法,可以自訂義它所賦予id嗎? 例如signature_1之類的
+
+<script lang="ts" setup>
+import { VueSignaturePad, type Signature } from '@selemondev/vue3-signature-pad';
+import { onBeforeUnmount, onMounted, ref, computed } from 'vue';
+
+/*
+使用範例：
+<SignaturePad @confirm="(img) => (signature = img)" water-mark="同意投保">
+  <button>TEST</button>
+
+  <template #prepend>
+    <h1>標題</h1>
+    <p>說明</p>
+  </template>
+</SignaturePad>
+
+按下確認後觸發@confirm，形參是簽名的base64
+water-mark傳了才會有浮水印
+在綁定v-model:show的情況下，簽完名按確認不會關閉彈窗，可從父組件管控關閉彈窗的時機
+*/
+
+interface Props {
+  waterMark?: string;
+  width?: number;
+  height?: number;
+}
+const props = defineProps<Props>();
+
+interface Emits {
+  (event: 'confirm', signature: string): void;
+}
+const emit = defineEmits<Emits>();
+
+const isShowModel = defineModel<boolean>('show', {
+  required: false,
+  default: undefined
+});
+console.log(isShowModel.value);
+
+const isShowDefault = ref(false);
+
+const isShow = computed({
+  get: () => (typeof isShowModel.value === 'boolean' ? isShowModel.value : isShowDefault.value),
+  set: (value) => {
+    if (typeof isShowModel.value === 'boolean') {
+      isShowModel.value = value;
+    } else {
+      isShowDefault.value = value;
+    }
+  }
+});
+
+const signatureRef = ref<Signature>(null!);
+
+// 清除畫布
+const clear = () => {
+  signatureRef.value?.clearCanvas();
+};
+
+// 確認按鈕
+const confirm = () => {
+  const signature = signatureRef.value?.saveSignature();
+  emit('confirm', signature);
+  isShowDefault.value = false;
+};
+
+// ctrl+z undo
+let isControlPressed = false;
+// 監聽ctrl和z有沒有被壓下
+const onKeydown = (e: KeyboardEvent) => {
+  if (!isShow.value) {
+    return;
+  }
+  switch (e.key) {
+    case 'Control':
+      isControlPressed = true;
+      break;
+    // 壓著ctrl的狀態下按z上一步
+    case 'z':
+      if (isControlPressed) {
+        signatureRef.value?.undo();
+      }
+  }
+};
+
+const MAX_WIDTH = 894;
+
+const computedDimensions = computed(() => {
+  const originalWidth = props.width || MAX_WIDTH;
+  const originalHeight = props.height || 250;
+
+  const ratio = originalHeight / originalWidth;
+  const finalWidth = MAX_WIDTH;
+  const finalHeight = finalWidth * ratio;
+
+  return {
+    width: Math.round(finalWidth),
+    height: Math.round(finalHeight)
+  };
+});
+
+// 監聽ctrl鍵有沒有被鬆開
+const onKeyup = (e: KeyboardEvent) => {
+  if (e.key === 'Control') {
+    isControlPressed = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown);
+  document.addEventListener('keyup', onKeyup);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKeydown);
+  document.removeEventListener('keyup', onKeyup);
+});
+</script>
+
+<template>
+  <div @click="isShow = true">
+    <slot />
+
+    <v-dialog v-model="isShow" :width="942" :height="680" persistent>
+      <v-card class="card justify-space-between py-8 px-6">
+        <v-btn
+          @click="isShow = false"
+          icon="mdi-close"
+          variant="text"
+          class="position-absolute top-0 right-0 close-btn"
+        ></v-btn>
+
+        <div>
+          <slot name="prepend" />
+
+          <div class="position-relative signPadCantainer">
+            <vue-signature-pad
+              ref="signatureRef"
+              :width="`${computedDimensions.width}px`"
+              :height="`${computedDimensions.height}px`"
+              :min-width="6"
+              :max-width="10"
+              :options="{
+                penColor: 'black',
+                backgroundColor: 'rgba(242, 246, 255, 1)'
+              }"
+            ></vue-signature-pad>
+            <div
+              v-if="waterMark"
+              class="position-absolute top-0 left-0 d-flex justify-space-evenly align-center w-100 h-100 water-mark-wrapper"
+            >
+              <span v-for="word in waterMark" class="water-mark-text">
+                {{ word }}
+              </span>
+            </div>
+          </div>
+          <div class="d-flex justify-end mt-6">
+            <a @click="clear" class="highlight cursor-pointer">清除資料重新填寫</a>
+          </div>
+        </div>
+
+        <div class="d-flex justify-center">
+          <v-btn
+            @click="confirm"
+            size="large"
+            color="#0044AD"
+            :width="240"
+            :height="48"
+            :rounded="false"
+            >確認</v-btn
+          >
+        </div>
+      </v-card>
+    </v-dialog>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.signPadCantainer {
+  margin: auto;
+  width: fit-content;
+  max-width: 100%;
+
+  &:deep(div) {
+    max-width: 100%;
+  }
+}
+/* .signCantainer :deep(div) {
+  max-width: 100%;
+} */
+
+.signature-box {
+  margin: auto !important;
+  display: block;
+}
+
+.card {
+  .highlight {
+    color: #0044ad;
+  }
+
+  .close-btn {
+    z-index: 1;
+  }
+}
+
+.water-mark-wrapper {
+  pointer-events: none;
+  opacity: 0.25;
+
+  .water-mark-text {
+    line-height: 100%;
+    font-size: 7.625rem;
+    color: #ccd9ef;
+  }
+}
+</style>

@@ -138,14 +138,13 @@ export const useInsureanceStore = defineStore('insureance', () => {
   function buildSignatureRoleType() {
     const ROLE_ORDER = [46, 1, 2, 4, 5, 7, 8, 3, 0, 6]
     const roleMap = new Map<number, Record<number, { signIndex: string, signDate: String, isSign: Boolean, type: String, sname: String, formId: String, sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
-    console.log(`roleMap => `, roleMap)
+    // console.log(`roleMap => `, roleMap)
 
     //將每頁的頁面資料轉成從名角色對應按鈕
     for (const doc of insureanceData.value) {
       const pageIndex = doc.pageIndex;
 
       for (const sig of doc.signature || []) {
-        console.log(`sig => `, sig)
         const type = parseInt(sig.type);
         if (!roleMap.has(type)) {
           roleMap.set(type, {});
@@ -171,7 +170,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
         }
       }
     }
-    console.log(`roleMap => `, roleMap)
 
     // 再將角色對應按鈕做排序，排序成46, 1, 2, 4, 5, 7, 8, 3, 0, 6的順序
     const reSortedMap = Array.from(roleMap.entries()).sort(([a], [b]) => {

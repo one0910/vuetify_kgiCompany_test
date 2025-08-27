@@ -103,7 +103,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
     }
 
     // ⭐️ 重新建構角色對應
-    buildSignatureRoleType();
+    rebuildSignatureRoleType();
 
     // 如果是初次載入才設 currentRole
     // 若是新增資料也補上目前角色的狀態映射
@@ -138,7 +138,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
   function buildSignatureRoleType() {
     const ROLE_ORDER = [46, 1, 2, 4, 5, 7, 8, 3, 0, 6]
     const roleMap = new Map<number, Record<number, { signIndex: string, signDate: String, isSign: Boolean, type: String, sname: String, formId: String, sigIndex: number, pageIndex: number, documentHeight: number, pageHeight: number, signId: string; signimg: string; xy: string }>>();
-    // console.log(`roleMap => `, roleMap)
 
     //將每頁的頁面資料轉成從名角色對應按鈕
     for (const doc of insureanceData.value) {
@@ -183,6 +182,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (ia !== ib) return ia - ib       // 先比自訂順序
       return a - b                         // 其次用數字大小做穩定排序
     })
+    console.log(`reSortedMap => `, reSortedMap)
 
     // ✅ 產生完整的 signatureRoleType 陣列，並生成 buttonStatus
     const result = reSortedMap.map(([type, pageMap]) => {
@@ -191,7 +191,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
       for (let i = 0; i < totalPages; i++) {
         if (pageMap[i]) {
-          // console.log(`2 => `,)
           buttonStatus.push(pageMap[i].signimg?.trim() ? 'signed' : 'unsigned');
         } else {
           buttonStatus.push('unselected');
@@ -202,6 +201,101 @@ export const useInsureanceStore = defineStore('insureance', () => {
       const allSignedComplete = Object.values(pageMap).every((entry: any) => {
         return !!entry.signimg && entry.signimg.trim() !== '';
       });
+
+      return {
+        type,
+        name: typeMapRole[type] || `未知角色 ${type}`,
+        pageData: pageMap,
+        allSignedComplete,
+        buttonStatus
+      };
+    });
+
+    signatureRoleType.value = result;
+  }
+
+  //角色列按鈕
+  function rebuildSignatureRoleType() {
+    type PageSigEntry = {
+      formId: string; sname: string; signId: string;
+      signimg: string; sigIndex: number; isSign: boolean;
+      type: string; signIndex: string; xy: string;
+      documentHeight: number; pageHeight: number; pageIndex: number; signDate: string;
+      pageTypeIndex: number
+    };
+    const ROLE_ORDER = [46, 1, 2, 4, 5, 7, 8, 3, 0, 6]
+    const roleMap2 = new Map<number, Record<number, PageSigEntry[]>>();
+
+    // console.log(`roleMap => `, roleMap)
+
+    //將每頁的頁面資料轉成從名角色對應按鈕
+    for (const doc of insureanceData.value) {
+      const pageIndex = doc.pageIndex;
+
+      for (const sig of doc.signature || []) {
+        const type = Number(sig.type);
+        if (!roleMap2.has(type)) {
+          roleMap2.set(type, {});
+        }
+        const pageMap = roleMap2.get(type)!;
+
+        if (!pageMap[pageIndex]) {
+          pageMap[pageIndex] = [];
+        }
+        pageMap[pageIndex].push({
+          formId: sig.formId,
+          sname: sig.snmae,
+          signId: sig.signId,
+          signimg: sig.signimg,
+          sigIndex: sig.sigIndex,
+          isSign: sig.isSign,
+          type: String(sig.type),
+          signIndex: sig.signIndex,
+          xy: sig.xy,
+          documentHeight: doc.documentHeight,
+          pageHeight: doc.pageHeight,
+          pageIndex: doc.pageIndex,
+          signDate: '',
+          pageTypeIndex: pageMap[pageIndex].length
+        });
+      }
+    }
+    // 再將角色對應按鈕做排序，排序成46, 1, 2, 4, 5, 7, 8, 3, 0, 6的順序
+    const reSortedMap = Array.from(roleMap2.entries()).sort(([a], [b]) => {
+      const orderIndex = (type: number) => {
+        const i = ROLE_ORDER.indexOf(type)
+        return i === -1 ? Number.POSITIVE_INFINITY : i
+      }
+
+      const ia = orderIndex(a)
+      const ib = orderIndex(b)
+      if (ia !== ib) return ia - ib       // 先比自訂順序
+      return a - b                         // 其次用數字大小做穩定排序
+    })
+    console.log(`reSortedMap => `, reSortedMap)
+
+    // ✅ 產生完整的 signatureRoleType 陣列，並生成 buttonStatus
+    const result = reSortedMap.map(([type, pageMap]) => {
+      const buttonStatus: SignStatus[] = [];
+      const totalPages = insureanceData.value.length;
+
+      for (let i = 0; i < totalPages; i++) {
+        if (pageMap[i]) {
+
+          buttonStatus.push(pageMap[i].every(sign => sign.isSign) ? 'signed' : 'unsigned');
+        } else {
+          buttonStatus.push('unselected');
+        }
+      }
+
+      //從後端傳回來的資料要寫入至signatureRoleType，allSignedComplete是用來確認該簽名類型(角色)是否都已簽名
+      const allSignedComplete = Object.values(pageMap).every((entries: any[]) => {
+        return entries.every(entry => {
+          return entry.isSign === true
+        })
+      });
+      console.log(`allSignedComplete => `, allSignedComplete)
+
       return {
         type,
         name: typeMapRole[type] || `未知角色 ${type}`,
@@ -616,7 +710,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
     const el = scrollContainerRef.value?.$el || scrollContainerRef.value;
     if (!(el instanceof HTMLElement)) return;
     const roleIndex = currentRole.value.index
-    const target = signatureRoleType.value[roleIndex].pageData[positionIndex];
+    const target = signatureRoleType.value[roleIndex].pageData[positionIndex][0];
+    console.log(`target => `, target)
 
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;

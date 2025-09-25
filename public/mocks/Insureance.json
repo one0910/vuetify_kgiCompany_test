@@ -1,44 +1,39 @@
 {
-  "totalPage": 26,
+  "totalPage": 38,
   "form": [
     {
-      "formId": "A0052412101",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P1",
+      "formId": "C0762412101",
+      "formName": "凱基人壽鑫收益變額壽險(112)要保書_BR(24121)_P1",
       "docSource": ""
     },
     {
-      "formId": "A0052412102",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P2",
+      "formId": "C0762412102",
+      "formName": "凱基人壽鑫收益變額壽險(112)要保書_BR(24121)_P2",
       "docSource": ""
     },
     {
-      "formId": "A0052412103",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P3",
+      "formId": "C0762412103",
+      "formName": "凱基人壽鑫收益變額壽險(112)要保書_BR(24121)_P3",
       "docSource": ""
     },
     {
-      "formId": "A0052412104",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P4",
+      "formId": "C0762412104",
+      "formName": "凱基人壽鑫收益變額壽險(112)要保書_BR(24121)_P4",
       "docSource": ""
     },
     {
-      "formId": "A0052412105",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P5",
+      "formId": "Z1782401101",
+      "formName": "變額壽險投保人須知+要保書填寫說明(24011)",
       "docSource": ""
     },
     {
-      "formId": "A0052412106",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P6",
+      "formId": "Z2212412101",
+      "formName": "重要事項告知書暨保險商品特性摘要說明(C076)(24121)_P1",
       "docSource": ""
     },
     {
-      "formId": "A0052412107",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P7",
-      "docSource": ""
-    },
-    {
-      "formId": "A0052412108",
-      "formName": "凱基人壽人身保險要保書(多元通路版)-BR(24121)_P8",
+      "formId": "Z2212412102",
+      "formName": "重要事項告知書暨保險商品特性摘要說明(C076)(24121)_P2",
       "docSource": ""
     },
     {
@@ -52,13 +47,18 @@
       "docSource": ""
     },
     {
-      "formId": "Z1762401101",
-      "formName": "人身保險投保人須知+要保書填寫說明(24011)",
+      "formId": "Z0042412101",
+      "formName": "壽險業履行個人資料保護法告知義務內容(24121)",
       "docSource": ""
     },
     {
-      "formId": "Z0042412101",
-      "formName": "壽險業履行個人資料保護法告知義務內容(24121)",
+      "formId": "Z0372412101",
+      "formName": "投資型保險商品客戶適合度及重要事項確認書(24121)",
+      "docSource": ""
+    },
+    {
+      "formId": "Z1712412101",
+      "formName": "投資型保險商品連結高收益債券基金風險預告書(24121)",
       "docSource": ""
     },
     {
@@ -97,18 +97,8 @@
       "docSource": ""
     },
     {
-      "formId": "Z2502412102",
-      "formName": "人身保險契約審閱期間確認聲明書(24121)",
-      "docSource": ""
-    },
-    {
-      "formId": "Z2502412103",
-      "formName": "人身保險契約審閱期間確認聲明書(24121)",
-      "docSource": ""
-    },
-    {
-      "formId": "Z2652408201",
-      "formName": "特別提醒事項聲明書(24082)_P1",
+      "formId": "Z0182509101",
+      "formName": "要保人委託壽險業者辦理結匯授權書(25091)",
       "docSource": ""
     },
     {
@@ -117,120 +107,144 @@
       "docSource": ""
     },
     {
-      "formId": "Z2322412101",
-      "formName": "保戶e通知申請書(24121)",
+      "formId": "Z2802507101",
+      "formName": "建議書1",
       "docSource": ""
     },
     {
-      "formId": "Z1932503101",
-      "formName": "台幣轉帳授權申請暨約定書_電子版-首期(25031)",
+      "formId": "Z2802507102",
+      "formName": "建議書2",
       "docSource": ""
     },
     {
-      "formId": "Z1932503102",
-      "formName": "台幣轉帳授權申請暨約定書_電子版-續期(25031)",
+      "formId": "Z2802507103",
+      "formName": "建議書3",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507104",
+      "formName": "建議書4",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507105",
+      "formName": "建議書5",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507106",
+      "formName": "建議書6",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507107",
+      "formName": "建議書7",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507108",
+      "formName": "建議書8",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507109",
+      "formName": "建議書9",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507110",
+      "formName": "建議書10",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507111",
+      "formName": "建議書11",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507112",
+      "formName": "建議書12",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507113",
+      "formName": "建議書13",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507114",
+      "formName": "建議書14",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507115",
+      "formName": "建議書15",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507116",
+      "formName": "建議書16",
+      "docSource": ""
+    },
+    {
+      "formId": "Z2802507117",
+      "formName": "建議書17",
       "docSource": ""
     }
   ],
   "sign": [
     {
-      "formId": "A0052412108",
-      "xy": "204.724411,1088.188965,276.377991,64.566978",
+      "formId": "C0762412104",
+      "xy": "234.645676,1343.307129,301.574799,67.716583",
       "type": "2",
       "signDate": "",
-      "signId": "A231258655",
+      "signId": "A119731242",
       "signIndex": 1,
-      "snmae": "李依依不可異動案件BU ROU ROU",
+      "snmae": "愛分享",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "A0052412108",
-      "xy": "96.062996,1623.622070,214.173233,44.094448",
+      "formId": "C0762412104",
+      "xy": "232.283463,1245.669312,303.937012,71.653534",
+      "type": "1",
+      "signDate": "",
+      "signId": "A119731242",
+      "signIndex": 2,
+      "snmae": "愛分享",
+      "signimg": "",
+      "isSign": false
+    },
+    {
+      "formId": "C0762412104",
+      "xy": "404.724426,1737.795288,317.322876,117.322815",
       "type": "0",
       "signDate": "",
       "signId": "",
-      "signIndex": 2,
-      "snmae": "黃敬鈞",
-      "signimg": "",
-      "isSign": false
-    },
-    {
-      "formId": "A0052412108",
-      "xy": "1311.023682,960.629944,223.622055,36.220474",
-      "type": "3",
-      "signDate": "",
-      "signId": "A265006307",
       "signIndex": 3,
-      "pNameFlag": "R3Y",
-      "snmae": "李圓圓",
-      "signimg": "",
-      "isSign": true
-    },
-    {
-      "formId": "A0052412108",
-      "xy": "207.874023,1171.653564,276.377960,64.566910",
-      "type": "4",
-      "signDate": "",
-      "signId": "",
-      "signIndex": 4,
-      "snmae": "",
+      "snmae": "施景雯",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "A0052412108",
-      "xy": "206.299210,986.614197,278.740173,64.566978",
+      "formId": "Z2212412102",
+      "xy": "218.897644,1797.637817,428.346497,54.330753",
       "type": "1",
       "signDate": "",
-      "signId": "A140342382",
+      "signId": "A119731242",
+      "signIndex": 4,
+      "snmae": "愛分享",
+      "signimg": "",
+      "isSign": false
+    },
+    {
+      "formId": "Z2212412102",
+      "xy": "1236.220459,1576.377930,326.771698,54.330601",
+      "type": "0",
+      "signDate": "",
+      "signId": "",
       "signIndex": 5,
-      "snmae": "王大榮不可異動案件WANG DA DAI RONG",
-      "signimg": "",
-      "isSign": false
-    },
-    {
-      "formId": "A0052412108",
-      "xy": "650.393738,1192.125977,250.393661,42.519684",
-      "type": "8",
-      "signDate": "",
-      "signId": "",
-      "signIndex": 6,
-      "snmae": "",
-      "signimg": "",
-      "isSign": false
-    },
-    {
-      "formId": "A0052412108",
-      "xy": "650.393738,1007.874023,251.968491,42.519684",
-      "type": "5",
-      "signDate": "",
-      "signId": "",
-      "signIndex": 7,
-      "snmae": "",
-      "signimg": "",
-      "isSign": false
-    },
-    {
-      "formId": "A0052412108",
-      "xy": "648.818909,1103.937012,250.393723,44.881866",
-      "type": "7",
-      "signDate": "",
-      "signId": "",
-      "signIndex": 8,
-      "snmae": "",
-      "signimg": "",
-      "isSign": false
-    },
-    {
-      "formId": "A0052412108",
-      "xy": "1311.023682,1003.149597,225.196899,36.220474",
-      "type": "3",
-      "signDate": "",
-      "signId": "A140342382",
-      "signIndex": 9,
-      "pNameFlag": "R4Y",
-      "snmae": "王大榮",
+      "snmae": "施景雯",
       "signimg": "",
       "isSign": false
     },
@@ -240,31 +254,63 @@
       "type": "0",
       "signDate": "",
       "signId": "",
-      "signIndex": 10,
-      "snmae": "黃敬鈞",
+      "signIndex": 6,
+      "snmae": "施景雯",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "Z1232412103",
-      "xy": "929.133850,1726.771729,459.842468,92.125992",
-      "type": "3",
+      "formId": "Z0372412101",
+      "xy": "243.307083,1426.771729,626.771667,57.480278",
+      "type": "1",
+      "signDate": "",
+      "signId": "A119731242",
+      "signIndex": 7,
+      "snmae": "愛分享",
+      "signimg": "",
+      "isSign": false
+    },
+    {
+      "formId": "Z0372412101",
+      "xy": "511.811035,1766.141724,306.299255,52.755913",
+      "type": "0",
       "signDate": "",
       "signId": "",
-      "signIndex": 11,
-      "pNameFlag": "R1Y",
-      "snmae": "",
+      "signIndex": 8,
+      "snmae": "施景雯",
       "signimg": "",
-      "isSign": true
+      "isSign": false
+    },
+    {
+      "formId": "Z1712412101",
+      "xy": "530.708679,1956.692993,310.236267,45.669285",
+      "type": "0",
+      "signDate": "",
+      "signId": "",
+      "signIndex": 9,
+      "snmae": "施景雯",
+      "signimg": "",
+      "isSign": false
+    },
+    {
+      "formId": "Z1712412101",
+      "xy": "262.992126,1663.779541,566.141663,58.267849",
+      "type": "1",
+      "signDate": "",
+      "signId": "A119731242",
+      "signIndex": 10,
+      "snmae": "愛分享",
+      "signimg": "",
+      "isSign": false
     },
     {
       "formId": "Z1232412103",
       "xy": "518.897644,1581.889771,499.999969,83.464523",
       "type": "1",
       "signDate": "",
-      "signId": "A140342382",
-      "signIndex": 12,
-      "snmae": "王大榮不可異動案件WANG DA DAI RONG",
+      "signId": "A119731242",
+      "signIndex": 11,
+      "snmae": "愛分享",
       "signimg": "",
       "isSign": false
     },
@@ -274,20 +320,8 @@
       "type": "0",
       "signDate": "",
       "signId": "",
-      "signIndex": 13,
-      "snmae": "黃敬鈞",
-      "signimg": "",
-      "isSign": false
-    },
-    {
-      "formId": "Z2502412101",
-      "xy": "654.330750,1751.181152,448.818909,52.755913",
-      "type": "3",
-      "signDate": "",
-      "signId": "",
-      "signIndex": 14,
-      "pNameFlag": "R1Y",
-      "snmae": "",
+      "signIndex": 12,
+      "snmae": "施景雯",
       "signimg": "",
       "isSign": false
     },
@@ -296,55 +330,77 @@
       "xy": "422.834656,1685.039429,511.811035,54.330753",
       "type": "1",
       "signDate": "",
-      "signId": "A140342382",
-      "signIndex": 15,
-      "snmae": "王大榮不可異動案件WANG DA DAI RONG",
+      "signId": "A119731242",
+      "signIndex": 13,
+      "snmae": "愛分享",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "Z2502412102",
-      "xy": "655.118103,1754.330688,444.881958,51.968494",
-      "type": "3",
+      "formId": "Z0182509101",
+      "xy": "551.181091,1392.125977,508.661438,66.141747",
+      "type": "1",
       "signDate": "",
-      "signId": "",
-      "signIndex": 16,
-      "pNameFlag": "R1Y",
-      "snmae": "",
+      "signId": "A119731242",
+      "signIndex": 14,
+      "snmae": "愛分享",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "Z2502412102",
-      "xy": "545.669312,2111.811035,362.992126,64.566910",
+      "formId": "Z0132412101",
+      "xy": "985.826782,2097.637939,232.283447,62.992218",
       "type": "0",
       "signDate": "",
       "signId": "",
-      "signIndex": 17,
-      "snmae": "黃敬鈞",
+      "signIndex": 15,
+      "snmae": "施景雯",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "Z2502412102",
-      "xy": "421.259857,1682.677246,511.811066,56.692860",
+      "formId": "Z0132412101",
+      "xy": "292.125977,1959.055176,433.858276,62.204796",
       "type": "1",
       "signDate": "",
-      "signId": "A140342382",
-      "signIndex": 18,
-      "snmae": "王大榮不可異動案件WANG DA DAI RONG",
+      "signId": "A119731242",
+      "signIndex": 16,
+      "snmae": "愛分享",
       "signimg": "",
       "isSign": false
     },
     {
-      "formId": "Z2502412103",
-      "xy": "655.118103,1750.393677,444.881958,52.755913",
-      "type": "3",
+      "formId": "Z0132412101",
+      "xy": "292.913391,2033.070923,433.858215,58.267700",
+      "type": "2",
+      "signDate": "",
+      "signId": "A119731242",
+      "signIndex": 17,
+      "snmae": "愛分享",
+      "signimg": "",
+      "isSign": false
+    },
+    {
+      "formId": "Z2802507114",
+      "xy": "306.299225,1918.897705,190.551178,44.094448",
+      "isProposal": true,
+      "type": "0",
       "signDate": "",
       "signId": "",
+      "signIndex": 18,
+      "snmae": "施景雯",
+      "signimg": "",
+      "isSign": false
+    },
+    {
+      "formId": "Z2802507114",
+      "xy": "295.275604,1762.992188,386.614166,40.944920",
+      "isProposal": true,
+      "type": "1",
+      "signDate": "",
+      "signId": "A119731242",
       "signIndex": 19,
-      "pNameFlag": "R1Y",
-      "snmae": "",
+      "snmae": "愛分享",
       "signimg": "",
       "isSign": false
     }

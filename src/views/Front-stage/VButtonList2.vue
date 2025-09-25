@@ -7,6 +7,7 @@ import SwitchSideBarSign from '@/components/signature/SwitchSideBar-Sign2.vue';
 import SignaturedNavbar from '@/components/signature/SignaturedNavbar2.vue';
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
 import SignaturePad from '@/components/signature/SignaturePad.vue';
+import throttle from 'lodash/throttle';
 
 const store = useInsureanceStore();
 const router = useRouter();
@@ -28,6 +29,7 @@ function detectBottom(event) {
   store.currentDocs.forEach((doc, index) => {
     const pageHeight = doc.pageHeight || 0;
     const pageTop = cumulativeHeight;
+    console.log(`pageTop => `, pageTop);
     let pageBottom = cumulativeHeight + pageHeight;
 
     // ✅ 判斷目前是否在這一頁的可視範圍內
@@ -36,16 +38,17 @@ function detectBottom(event) {
     // ✅ 判斷是否算「已看完」
     const isRead = scrollPosition >= pageBottom && !doc.readComplete;
     //目前滾輪在該頁, 且滑到該頁頁底才算巴已閱讀
-
+    // console.log(`scrollPosition => `, scrollPosition);
+    // console.log(`pageBottom => `, pageBottom);
     if (isRead && store.currentPage === index) {
       doc.readComplete = true;
-      // console.log(`✅ 第 ${index + 1} 頁已閱讀完畢`);
+      console.log(`✅ 第 ${index + 1} 頁已閱讀完畢`);
     }
 
     if (isInView) {
       if (store.currentPage !== index) {
         store.currentPage = index;
-        // console.log(`👉 現在位於第 ${index + 1} 頁`);
+        console.log(`👉 現在位於第 ${index + 1} 頁`);
       }
     }
 
@@ -106,6 +109,14 @@ function goToNextStage() {
   }
 }
 
+const throttledReload = throttle(
+  () => {
+    window.location.reload();
+  },
+  1000,
+  { leading: true, trailing: false }
+);
+
 onMounted(async () => {
   //將canvasViewerRef寫至store
   store.setCanvseViewer(canvasViewerRef.value);
@@ -132,6 +143,9 @@ onMounted(async () => {
 
     store.setScrollContainer(el);
   } else return;
+
+  // ✅ 監聽視窗尺寸變化（節流 1 秒）
+  window.addEventListener('resize', throttledReload);
 });
 
 watch(

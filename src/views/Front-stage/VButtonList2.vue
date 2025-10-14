@@ -57,15 +57,16 @@ function detectBottom(event) {
 }
 
 async function signtureHandler(base64Img) {
-  const index = store.currectClickSign.pageIndex;
-  console.log(`signtureHandler_index => `, index);
+  const { pageIndex, pageDataIndex } = store.currectClickSign;
+
   const roleIndex = store.currentRole.index;
-  const signatrueRole = store.signatureRoleType[roleIndex].pageData[index.toString()];
-  const currentDocIndex = signatrueRole.pageIndex;
-  const currentDocSigIndex = signatrueRole.sigIndex;
+  const signatrueRolePageData = store.signatureRoleType[roleIndex].pageData[pageIndex.toString()];
+  const signatrueRolePageData_signData = signatrueRolePageData[pageDataIndex];
+  const currentDocIndex = signatrueRolePageData_signData.pageIndex;
+  const currentDocSigIndex = signatrueRolePageData_signData.sigIndex;
 
   // 更新 base64
-  signatrueRole.signimg = base64Img;
+  signatrueRolePageData_signData.signimg = base64Img;
   store.currentDocs[currentDocIndex].signature[currentDocSigIndex].signimg = base64Img;
   store.currentDocs[currentDocIndex].buttonStatus = 'signed';
   store.signatureRoleType[roleIndex].buttonStatus[currentDocIndex] = 'signed';
@@ -81,7 +82,7 @@ async function signtureHandler(base64Img) {
     store.signatureRoleType[roleIndex].allSignedComplete = true;
   }
 
-  store.renderedCanvas.updateCanvasByIndex(index);
+  store.renderedCanvas.updateCanvasByIndex(pageIndex);
 
   store.openSignaturePadModal = false;
 }
@@ -110,26 +111,34 @@ function goToNextStage() {
 }
 
 const throttledReload = throttle(
-  () => {
-    // window.location.reload();
-    // 確保 ref 有掛載
-    const viewerEl = scrollContainerRef.value?.$el;
-    console.log(`viewerEl => `, viewerEl);
-    if (!viewerEl) {
-      console.warn('⚠️ canvasViewerRef 尚未載入');
-      return;
-    }
+  async () => {
+    // 1️⃣ 等 Vue DOM 全部更新完
+    await nextTick();
 
-    // 找出所有 canvas 元素
-    const observer = new MutationObserver((mutations, obs) => {
-      const canvases = viewerEl.querySelectorAll('canvas');
-      console.log(`canvases => `, canvases);
-      canvases.forEach((canvas, index) => {
-        console.log(`canvas => `, canvas);
-        console.log(`第 ${index + 1} 個 canvas 高度 =>`, canvas.offsetHeight);
+    // 2️⃣ 再等瀏覽器完成這一幀的重繪
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const viewerEl = scrollContainerRef.value?.$el;
+        if (!viewerEl) {
+          console.warn('⚠️ canvasViewerRef 尚未載入');
+          return;
+        }
+
+        const canvases = viewerEl.querySelectorAll('canvas');
+        console.log(`canvases => `, canvases);
+        if (!canvases.length) {
+          console.warn('⚠️ 找不到任何 canvas');
+          return;
+        }
+
+        console.group('🎨 Canvas 高度 (在 repaint 後)');
+        canvases.forEach((canvas, index) => {
+          store.insureanceData[index].pageHeight = canvas.offsetHeight;
+          console.log(`第 ${index + 1} 個 canvas 高度 =>`, canvas.offsetHeight);
+        });
+        console.groupEnd();
       });
     });
-    observer.observe(viewerEl, { childList: true, subtree: true });
   },
   1000,
   { leading: true, trailing: false }

@@ -4,8 +4,7 @@ import { getSignatureDoc } from '@/service/documentSignature';
 import { typeMapRole } from '@/utility/roleMap';
 import throttle from 'lodash/throttle';
 import Insureance3 from '@/mocks/Insureance3.json'
-
-
+import { clickableRectsType, PageSigEntry } from '@/types/common';
 
 
 export const useInsureanceStore = defineStore('insureance', () => {
@@ -23,7 +22,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
   const navbarHeight = ref<number>(0)
   const signatureRoleType = ref<any[]>([])
   const openSignaturePadModal = ref<boolean>(false)
-  const currectClickSign = ref({ width: 0, height: 0, pageIndex: 0, sigIndex: 0, type: 0 })
+  const currectClickSign = ref({ pageDataIndex: 0, width: 0, height: 0, pageIndex: 0, sigIndex: 0, type: 0 })
   const salseSignatureImg = ref<string>('')
   const currentGetPageInfo = ref<{ allPageNumber: number, loadedPage: number }>({ allPageNumber: 17, loadedPage: 0 })
 
@@ -215,13 +214,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
 
   //角色列按鈕
   function rebuildSignatureRoleType() {
-    type PageSigEntry = {
-      formId: string; sname: string; signId: string;
-      signimg: string; sigIndex: number; isSign: boolean;
-      type: string; signIndex: string; xy: string;
-      documentHeight: number; pageHeight: number; pageIndex: number; signDate: string;
-      pageTypeIndex: number
-    };
     const ROLE_ORDER = [46, 1, 2, 4, 5, 7, 8, 3, 0, 6]
     const roleMap2 = new Map<number, Record<number, PageSigEntry[]>>();
 
@@ -363,10 +355,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     renderedCanvas.value = canvasViewerRef
   }
 
-  function removeAllSignature(params: type) {
-
-  }
-
 
   async function renderInsureanceDoc(doc: any): Promise<HTMLCanvasElement | null> {
     const base64 = doc.docSource;
@@ -388,7 +376,7 @@ export const useInsureanceStore = defineStore('insureance', () => {
         if (!ctx) return reject(new Error('無法取得 CanvasRenderingContext2D'));
         ctx.drawImage(img, 0, 0);
 
-        const clickableRects: { x: number; y: number; width: number; height: number; xy: string, index: { pageIndex: number, sigIndex: number, type: number } }[] = [];
+        const clickableRects: clickableRectsType[] = [];
 
         if (stage.value !== 'preview') {
           const highlights = (doc.signature || []).map(sig => {
@@ -399,7 +387,8 @@ export const useInsureanceStore = defineStore('insureance', () => {
               index: {
                 pageIndex: doc.pageIndex,
                 sigIndex: sig.sigIndex,
-                type: sig.type
+                type: sig.type,
+                pageDataIndex: 0
               }
             }
           });
@@ -458,12 +447,27 @@ export const useInsureanceStore = defineStore('insureance', () => {
           const clicked = clickableRects.find(({ x, y, width, height, index }) =>
             mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
           );
-          console.log(`clicked => `, clicked)
 
+          const getSignatureRoleType_pageData_index = (signClickedData: clickableRectsType) => {
+            const { x, y, width, height } = signClickedData
+            const currentRoleIndex = currentRole.value.index
+            const { pageIndex } = signClickedData.index
+            const getSignatureRolePageData = signatureRoleType.value[currentRoleIndex].pageData[pageIndex.toString()]
+            const xy = `${x.toFixed(6)},${y.toFixed(6)},${width.toFixed(6)},${height.toFixed(6)}`
+            const pageDataIndex = getSignatureRolePageData.findIndex((pageData: any) => {
+              return pageData.xy === xy
+            })
+            return pageDataIndex
+          }
 
           if (!clicked) return
           if (clicked.index.type === currentRole.value.type) {
-            currectClickSign.value = { ...clicked.index, width: clicked.width, height: clicked.height }
+            currectClickSign.value = {
+              ...clicked.index,
+              pageDataIndex: getSignatureRoleType_pageData_index(clicked) || 0,
+              width: clicked.width,
+              height: clicked.height
+            }
             openSignaturePadModal.value = true
           } else if (clicked.index.type !== currentRole.value.type) {
             alert(`請切換至${typeMapRole[clicked.index.type]}`);
@@ -708,7 +712,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
     if (!(el instanceof HTMLElement)) return;
     const roleIndex = currentRole.value.index
     const target = signatureRoleType.value[roleIndex].pageData[positionIndex][0];
-    console.log(`target => `, target)
 
     const [x, y, width, height] = target.xy.split(',').map(Number);
     const { pageIndex, pageHeight, documentHeight } = target;

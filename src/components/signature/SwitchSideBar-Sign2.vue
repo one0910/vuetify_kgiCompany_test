@@ -54,7 +54,7 @@ watch(
 );
 
 onMounted(() => {
-  console.log(`itemRefs.value => `, itemRefs.value);
+  // console.log(`itemRefs.value => `, itemRefs.value);
 });
 </script>
 

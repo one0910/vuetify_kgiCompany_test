@@ -6,10 +6,11 @@ import { formatIndex } from '@/utility/transform';
 const store = useInsureanceStore();
 const insureanceData = computed(() => store.insureanceData);
 const currentPage = computed(() => store.currentPage);
+const props = defineProps(['canvasViewHeigh']);
 </script>
 
 <template>
-  <v-sheet height="450" class="overflow-y-auto bgPrimaryColor">
+  <v-sheet :height="props.canvasViewHeigh" class="overflow-y-auto bgPrimaryColor">
     <v-list class="bgPrimaryColor">
       <v-list-item v-for="(item, index) in insureanceData" :key="index" tag="div" class="px-0">
         <template v-slot>

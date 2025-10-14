@@ -18,7 +18,8 @@ function setItemRef(index: number) {
 
 function sidebarScrollTo(currentPage: number) {
   const container = scrollSheetRef.value?.$el;
-  const targetHeight = itemRefs.value[currentPage].offsetHeight * currentPage;
+  const targetHeight =
+    itemRefs.value[currentPage].parentElement?.parentElement.offsetHeight * currentPage;
   const targetTop = itemRefs.value[currentPage].offsetTop * currentPage;
   // 滾動到對應 item 元素
   if (container) {
@@ -51,6 +52,10 @@ watch(
     sidebarScrollTo(currentPage);
   }
 );
+
+onMounted(() => {
+  console.log(`itemRefs.value => `, itemRefs.value);
+});
 </script>
 
 <template>
@@ -109,7 +114,7 @@ watch(
     class="d-flex flex-column mt-3 align-center bgPrimaryColor position-relative"
     height="120"
   >
-    <div class="boxshadow"></div>
+    <!-- <div class="boxshadow"></div> -->
     <!-- 往上一個箭頭 -->
     <v-avatar
       color="white"

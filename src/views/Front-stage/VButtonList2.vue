@@ -29,7 +29,7 @@ function detectBottom(event) {
   store.currentDocs.forEach((doc, index) => {
     const pageHeight = doc.pageHeight || 0;
     const pageTop = cumulativeHeight;
-    console.log(`pageTop => `, pageTop);
+    // console.log(`pageTop => `, pageTop);
     let pageBottom = cumulativeHeight + pageHeight;
 
     // ✅ 判斷目前是否在這一頁的可視範圍內
@@ -194,7 +194,7 @@ watch(
     <v-row>
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
-        <SwitchSideBarRead v-if="store.stage === 'preview'" />
+        <SwitchSideBarRead v-if="store.stage === 'preview'" :canvasViewHeigh="maxHeight" />
         <SwitchSideBarSign v-else />
         <!-- <SwitchSideBarSign :showFakeSign="showFakeSign" /> -->
       </v-col>

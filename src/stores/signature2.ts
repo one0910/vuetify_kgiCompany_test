@@ -294,7 +294,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
           return entry.isSign === true
         })
       });
-      console.log(`allSignedComplete => `, allSignedComplete)
 
       return {
         type,

@@ -111,7 +111,25 @@ function goToNextStage() {
 
 const throttledReload = throttle(
   () => {
-    window.location.reload();
+    // window.location.reload();
+    // 確保 ref 有掛載
+    const viewerEl = scrollContainerRef.value?.$el;
+    console.log(`viewerEl => `, viewerEl);
+    if (!viewerEl) {
+      console.warn('⚠️ canvasViewerRef 尚未載入');
+      return;
+    }
+
+    // 找出所有 canvas 元素
+    const observer = new MutationObserver((mutations, obs) => {
+      const canvases = viewerEl.querySelectorAll('canvas');
+      console.log(`canvases => `, canvases);
+      canvases.forEach((canvas, index) => {
+        console.log(`canvas => `, canvas);
+        console.log(`第 ${index + 1} 個 canvas 高度 =>`, canvas.offsetHeight);
+      });
+    });
+    observer.observe(viewerEl, { childList: true, subtree: true });
   },
   1000,
   { leading: true, trailing: false }
@@ -127,20 +145,6 @@ onMounted(async () => {
   if (el instanceof HTMLElement) {
     el.addEventListener('scroll', detectBottom);
     maxHeight.value = screen.availHeight * 0.62;
-    // console.log(`window.screen.height => `, window.screen.height);
-    // console.log(`window.screen.availHeight => `, window.screen.availHeight);
-    // console.log(`window.outerHeight => `, window.outerHeight);
-    // console.log(`window.innerHeight => `, window.innerHeight);
-    // console.log(`window.visualViewport?.height => `, window.visualViewport?.height);
-    // console.log(`document.documentElement.clientHeight => `, document.documentElement.clientHeight);
-    // console.log(`document.documentElement.scrollHeight => `, document.documentElement.scrollHeight);
-    // console.log(`window.scrollY => `, window.scrollY);
-    // console.log(`el.clientHeight => `, el.clientHeight);
-    // console.log(`el.offsetHeight => `, el.offsetHeight);
-    // console.log(`el.scrollHeight => `, el.scrollHeight);
-    // console.log(`el.getBoundingClientRect().height => `, el.getBoundingClientRect().height);
-    // console.log(`window.devicePixelRatio => `, window.devicePixelRatio);
-
     store.setScrollContainer(el);
   } else return;
 

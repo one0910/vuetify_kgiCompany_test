@@ -182,7 +182,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (ia !== ib) return ia - ib       // 先比自訂順序
       return a - b                         // 其次用數字大小做穩定排序
     })
-    console.log(`reSortedMap => `, reSortedMap)
 
     // ✅ 產生完整的 signatureRoleType 陣列，並生成 buttonStatus
     const result = reSortedMap.map(([type, pageMap]) => {
@@ -272,7 +271,6 @@ export const useInsureanceStore = defineStore('insureance', () => {
       if (ia !== ib) return ia - ib       // 先比自訂順序
       return a - b                         // 其次用數字大小做穩定排序
     })
-    console.log(`reSortedMap => `, reSortedMap)
 
     // ✅ 產生完整的 signatureRoleType 陣列，並生成 buttonStatus
     const result = reSortedMap.map(([type, pageMap]) => {

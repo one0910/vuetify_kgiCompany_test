@@ -110,34 +110,43 @@ onMounted(() => {
     </v-list>
   </v-sheet>
 
-  <v-sheet
-    class="d-flex flex-column mt-3 align-center bgPrimaryColor position-relative"
-    height="120"
-  >
+  <v-sheet class="bgPrimaryColor position-relative" height="120">
     <!-- <div class="boxshadow"></div> -->
     <!-- 往上一個箭頭 -->
-    <v-avatar
-      color="white"
-      size="54"
-      class="mb-auto border-md"
-      @click="store.switchSignButton({ type: 'last' })"
-    >
-      <v-icon icon="mdi-arrow-up"></v-icon>
-    </v-avatar>
+    <div class="arrowContainer" @click="store.switchSignButton({ type: 'last' })">
+      <v-icon icon="mdi-chevron-up"></v-icon>
+      <span>上一個簽名</span>
+    </div>
 
     <!-- 往下一個箭頭 -->
-    <v-avatar
-      color="white"
-      size="54"
-      class="border-md"
-      @click="store.switchSignButton({ type: 'next' })"
-    >
-      <v-icon icon="mdi-arrow-down"></v-icon>
-    </v-avatar>
+    <div class="arrowContainer" @click="store.switchSignButton({ type: 'next' })">
+      <v-icon icon="mdi-chevron-down"></v-icon>
+      <span>下一個簽名</span>
+    </div>
   </v-sheet>
 </template>
 
 <style lang="scss" scoped>
+.arrowContainer {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  cursor: pointer;
+  color: #0044ad;
+  /* color: #626364; */
+  margin: 15px 0;
+
+  :deep(.v-icon) {
+    font-size: 20px;
+  }
+
+  span {
+    overflow: hidden;
+    /* text-overflow: ellipsis; */
+    /* white-space: nowrap; */
+  }
+}
+
 .bgPrimaryColor {
   background-color: #f2f6ff;
 }

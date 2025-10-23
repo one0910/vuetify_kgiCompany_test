@@ -8,6 +8,7 @@ import SignaturedNavbar from '@/components/signature/SignaturedNavbar2.vue';
 import CanvasViewer from '@/components/signature/CanvasViewer.vue';
 import SignaturePad from '@/components/signature/SignaturePad.vue';
 import throttle from 'lodash/throttle';
+import { useMouse } from '@/composable/useMouse';
 
 const store = useInsureanceStore();
 const router = useRouter();
@@ -16,6 +17,7 @@ const canvasViewerRef = ref();
 const maxHeight = ref(450);
 const tipBar = ref(true);
 const showFakeSign = ref(false);
+const { x, y } = useMouse();
 
 function detectBottom(event) {
   if (!(event.target instanceof HTMLElement)) return;
@@ -103,6 +105,9 @@ function goToNextStage() {
       tipBar.value = true;
       break;
     case 'sign1':
+      window.location.href = `./signature-insurance?proposalId=${proposalId}&salesRole=Y`;
+      break;
+    case 'sign2':
       router.push('/vlist');
       break;
     default:
@@ -131,11 +136,16 @@ const throttledReload = throttle(
           return;
         }
 
-        console.group('🎨 Canvas 高度 (在 repaint 後)');
+        // console.group('🎨 Canvas 高度 (在 repaint 後)');
+
         canvases.forEach((canvas, index) => {
+          if (index === 0) {
+            store.reWrite_SignatureRolePageHeight(canvas.offsetHeight);
+          }
           store.insureanceData[index].pageHeight = canvas.offsetHeight;
-          console.log(`第 ${index + 1} 個 canvas 高度 =>`, canvas.offsetHeight);
+          // console.log(`第 ${index + 1} 個 canvas 高度 =>`, canvas.offsetHeight);
         });
+
         console.groupEnd();
       });
     });
@@ -175,6 +185,8 @@ watch(
 );
 </script>
 <template>
+  <p>x:{{ store.coordinate.x }}</p>
+  <p>y:{{ store.coordinate.y }}</p>
   <v-container fluid="">
     <!-- 簽名畫板 -->
     <SignaturePad
@@ -190,7 +202,7 @@ watch(
       </template>
     </SignaturePad>
     <!-- 名稱列 & 頁數 -->
-    <v-row>
+    <!-- <v-row>
       <v-col cols="1" class="pa-0 text-center align-self-center">
         <v-icon icon="mdi-chevron-left" color="grey-darken-1" size="30"></v-icon>
       </v-col>
@@ -203,7 +215,7 @@ watch(
           </div>
         </div>
       </v-col>
-    </v-row>
+    </v-row> -->
     <v-row>
       <!-- 切換頁籤按鈕 -->
       <v-col cols="1" class="pa-0">
